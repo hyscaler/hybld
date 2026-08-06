@@ -193,6 +193,15 @@ export class Builder {
   private async runBuild(opts: BuildOptions): Promise<BuildSummary> {
     const t0 = Date.now();
     const mode = describeMode(opts);
+    // clean empties the cumulative outDir; combined with a narrow scope it
+    // would leave the deployed site with only the scoped pages (same footgun
+    // the Vite plugin guards against).
+    if (opts.clean && !opts.all) {
+      throw new Error(
+        "--clean empties the output directory and may only be combined with --all: " +
+          "a clean followed by a narrow scope would leave the site with only the scoped pages."
+      );
+    }
     await this.lock.acquire(this.wait);
     try {
       this.log(`build (${mode}) starting [backend: ${this.backend.name}]`);

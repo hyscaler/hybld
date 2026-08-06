@@ -250,6 +250,16 @@ for (const line of lines) {
     await b.close();
   });
 
+  it("refuses --clean with a narrow scope (it would wipe the site down to the scoped pages)", async () => {
+    const b = makeBuilder(uuidAdapter([{ id: "1", slug: "a", title: "a" }]), "cleanguard");
+    await expect(b.build({ slugs: ["a"], clean: true })).rejects.toThrow(/--clean.*--all/s);
+    await expect(b.build({ since: "last-build", clean: true })).rejects.toThrow(/--clean.*--all/s);
+    // --all --clean stays allowed (dry run to avoid a real framework build)
+    const summary = await b.build({ all: true, clean: true, dryRun: true });
+    expect(summary.dryRun).toBe(true);
+    await b.close();
+  });
+
   it("reconcile and targeted builds do not advance the --since cursor; --all and --since do", async () => {
     let items = [
       { id: "1", slug: "a1", title: "a1", modified: "2026-07-01T00:00:00Z" },
