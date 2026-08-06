@@ -2,8 +2,31 @@
   "name": "@hybld/adapter-strapi",
   "version": "1.0.0",
   "description": "Strapi (v4/v5) REST adapter preset for hybld",
-  "type": "module",
+  "author": "HyScaler",
   "license": "MIT",
+  "homepage": "https://github.com/MdMotahir/hybld/tree/development/packages/adapter-strapi#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MdMotahir/hybld.git",
+    "directory": "packages/adapter-strapi"
+  },
+  "bugs": {
+    "url": "https://github.com/MdMotahir/hybld/issues"
+  },
+  "keywords": [
+    "hybld",
+    "strapi",
+    "cms-adapter",
+    "headless-cms"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {

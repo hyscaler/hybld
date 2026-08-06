@@ -2,8 +2,33 @@
   "name": "hybld",
   "version": "1.0.0",
   "description": "Incremental and selective static builds for React + Vite projects backed by a headless CMS",
-  "type": "module",
+  "author": "HyScaler",
   "license": "MIT",
+  "homepage": "https://github.com/MdMotahir/hybld/tree/development/packages/hybld#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MdMotahir/hybld.git",
+    "directory": "packages/hybld"
+  },
+  "bugs": {
+    "url": "https://github.com/MdMotahir/hybld/issues"
+  },
+  "keywords": [
+    "static-site-generator",
+    "incremental-build",
+    "ssg",
+    "cms",
+    "headless-cms",
+    "react",
+    "vite",
+    "nextjs",
+    "astro",
+    "jamstack",
+    "incremental",
+    "wordpress"
+  ],
+  "type": "module",
+  "sideEffects": false,
   "engines": {
     "node": ">=22.5.0"
   },

@@ -1,0 +1,11 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@3.1.1/schema.json",
+  "changelog": "@changesets/cli/changelog",
+  "commit": false,
+  "fixed": [],
+  "linked": [["hybld", "@hybld/next", "@hybld/astro", "@hybld/adapter-wordpress", "@hybld/adapter-strapi", "@hybld/adapter-contentful", "@hybld/adapter-sanity"]],
+  "access": "public",
+  "baseBranch": "development",
+  "updateInternalDependencies": "patch",
+  "ignore": []
+}

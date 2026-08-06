@@ -2,8 +2,32 @@
   "name": "@hybld/next",
   "version": "1.0.0",
   "description": "Next.js render backend and helpers for hybld (scoped static export and merge)",
-  "type": "module",
+  "author": "HyScaler",
   "license": "MIT",
+  "homepage": "https://github.com/MdMotahir/hybld/tree/development/packages/next#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MdMotahir/hybld.git",
+    "directory": "packages/next"
+  },
+  "bugs": {
+    "url": "https://github.com/MdMotahir/hybld/issues"
+  },
+  "keywords": [
+    "hybld",
+    "nextjs",
+    "static-export",
+    "incremental-build",
+    "ssg"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {

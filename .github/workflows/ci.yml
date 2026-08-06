@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [development, main]
+  pull_request:
+    branches: [development, main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm run build
+
+      - name: Test
+        run: pnpm -r --filter './packages/*' run test
+
+      - name: E2E smoke (demo site against mock CMS)
+        run: |
+          cd examples/demo-site
+          node mock-cms/server.mjs &
+          sleep 1
+          npx hybld build --all
+          npx hybld build --since last-build
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Build docs site
+        run: |
+          cd docs
+          npm install --no-audit --no-fund
+          npm run build

@@ -2,8 +2,31 @@
   "name": "@hybld/astro",
   "version": "1.0.0",
   "description": "Astro render backend and helpers for hybld (scoped build and merge)",
-  "type": "module",
+  "author": "HyScaler",
   "license": "MIT",
+  "homepage": "https://github.com/MdMotahir/hybld/tree/development/packages/astro#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MdMotahir/hybld.git",
+    "directory": "packages/astro"
+  },
+  "bugs": {
+    "url": "https://github.com/MdMotahir/hybld/issues"
+  },
+  "keywords": [
+    "hybld",
+    "astro",
+    "incremental-build",
+    "ssg"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
