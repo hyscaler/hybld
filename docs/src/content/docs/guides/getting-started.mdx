@@ -1,13 +1,17 @@
 ---
 title: "Getting Started"
-description: "Install hybld, write the minimum config, and run your first incremental builds."
+description: "From zero to incremental builds in production: install, config anatomy, first builds, webhooks, cron, and deploys."
 sidebar:
   order: 1
 ---
 
 import { Tabs, TabItem } from "@astrojs/starlight/components";
 
-## Install
+This walkthrough takes you from an empty project to a production publishing loop: install, write a config, run the first full build, then wire up webhooks and a cron sweep so publishing one article rebuilds one page. It uses the React + Vite backend for concreteness; Next.js and Astro projects follow the same steps with their own wiring, covered in the [framework guides](/frameworks/react-vite/).
+
+Requirements: Node >= 22.5 (hybld uses the built-in `node:sqlite`). The current release line is `1.0.0-beta`.
+
+## 1. Install
 
 <Tabs syncKey="pkg">
   <TabItem label="npm">
@@ -48,58 +52,170 @@ import { Tabs, TabItem } from "@astrojs/starlight/components";
   </TabItem>
 </Tabs>
 
-Swap `@hybld/adapter-wordpress` for `@hybld/adapter-strapi`, `@hybld/adapter-contentful`, `@hybld/adapter-sanity`, or use the generic helpers from `hybld/adapters` (see [CMS adapters](/reference/adapters/)).
+Swap `@hybld/adapter-wordpress` for `@hybld/adapter-strapi`, `@hybld/adapter-contentful`, `@hybld/adapter-sanity`, or use the generic REST/GraphQL helpers from `hybld/adapters` (see [CMS adapters](/reference/adapters/)).
 
-## The minimum config
+## 2. The config, explained field by field
 
-Every project gets a `hybld.config.ts` (Next projects: use `.mjs`, see the [Next guide](/frameworks/nextjs/)):
+Every project gets a `hybld.config.ts` at the root (Next projects: use `.mjs`, see the [Next guide](/frameworks/nextjs/)). This one is a realistic starting point for a blog-shaped site with articles, a home page, and paginated category archives:
 
 ```ts
 import { defineConfig } from "hybld";
 import { wordpress } from "@hybld/adapter-wordpress";
 
 export default defineConfig({
-  adapter: wordpress({ baseUrl: "https://cms.example.com" }),
+  // WHERE CONTENT COMES FROM. One adapter serves the whole config
+  // (individual collections can override it).
+  adapter: wordpress({
+    baseUrl: process.env.CMS_URL ?? "https://cms.example.com",
+    trackDeletes: true,          // unpublished/trashed articles get removed from the site
+  }),
+
+  // WHERE THE SITE GOES. Every build accumulates into this directory;
+  // hybld never clears it unless you pass --clean.
+  outDir: "dist",
+
   pages: {
+    // THE COLLECTION: one page per CMS article.
     article: {
+      // CMS article -> frontend URL. This one function defines your URL
+      // scheme; the CMS permalink structure is irrelevant.
       route: (a) => `/articles/${a.slug}/`,
-      data: (a) => ({ title: a.title.rendered, html: a.content.rendered }),
-      dependents: (a) => ["/"],
+
+      // CMS article -> the props your page renders. THE CONTRACT: everything
+      // the page displays must derive from this return value, because its
+      // hash decides whether the page rebuilds.
+      data: (a) => ({
+        title: a.title.rendered,
+        html: a.content.rendered,
+        excerpt: a.excerpt.rendered,
+        date: a.date,
+        category: a.category_slug,
+      }),
+
+      // WHAT ELSE THIS ARTICLE AFFECTS. Publishing/editing/deleting it also
+      // rebuilds these pages: the home listing and the first 2 pages of its
+      // category archive.
+      dependents: (a) => ["/", { type: "category", id: a.category_slug, depth: 2 }],
+
+      // OPTIONAL: URL -> CMS identity (the inverse of route). Enables
+      // serve-mode regeneration on miss.
+      match: (route) => {
+        const m = route.match(/^\/articles\/([^/]+)\/$/);
+        return m ? { slug: m[1] } : null;
+      },
     },
+
+    // A SINGLETON AGGREGATE: one page derived from many articles.
     home: {
       route: () => "/",
-      data: async ({ cms }) => ({ latest: await cms.list({ perPage: 10 }) }),
+      data: async ({ cms }) => ({
+        latest: (await cms.list({ perPage: 10 })).map((a) => ({
+          slug: a.slug,
+          title: a.title.rendered,
+          date: a.date,
+        })),
+      }),
+    },
+
+    // AN ENUMERATED, PAGINATED AGGREGATE: one archive per category,
+    // splitting into pages of 20.
+    category: {
+      enumerate: async ({ cms }) => cms.listTerms("category"),
+      paginate: { perPage: 20 },
+      route: (c, page) => (page === 1 ? `/category/${c.slug}/` : `/category/${c.slug}/page/${page}/`),
+      data: async (c, page, { cms }) => ({
+        name: c.name,
+        items: (await cms.list({ perPage: 20, page, category_slug: c.slug })).map((a) => ({
+          slug: a.slug,
+          title: a.title.rendered,
+        })),
+      }),
     },
   },
+
+  // MAINTAINED AUTOMATICALLY on every build, from the manifest.
+  sitemap: { enabled: true, baseUrl: "https://www.example.com" },
+  feed: { enabled: true, title: "Example Blog" },
 });
 ```
 
-The framework-specific wiring (entry files for React + Vite, helper calls for Next/Astro) is covered in each framework guide. The three example apps in `examples/` are complete working references.
+Two ideas carry the whole system:
 
-## First builds
+- **`data()` is the unit of change.** hybld hashes each page's `data()` result; a page rebuilds only when that hash changes. Derive everything the page renders from it.
+- **`dependents()` is the blast radius.** It declares which listing pages an article affects, so incremental builds refresh those too, and nothing else.
 
-Run the CLI through your package manager's runner (`npx hybld ...`, `pnpm exec hybld ...`, `yarn hybld ...`) or from an npm script:
+The full option list is in the [configuration reference](/reference/configuration/); wiring your components to receive `data()` as props is framework-specific, covered next.
+
+## 3. Wire your framework
+
+- **React + Vite** (the default backend, no extra package): add two placeholders to `index.html`, a server entry, and a hydration call. [Complete guide](/frameworks/react-vite/).
+- **Next.js**: call `hybldParams`/`hybldData` in your dynamic routes, static export mode. [Complete guide](/frameworks/nextjs/).
+- **Astro**: call `hybldPaths`/`hybldData` in `getStaticPaths`. [Complete guide](/frameworks/astro/).
+
+The four apps in the repo's `examples/` directory are complete, working references for every backend.
+
+## 4. First builds
+
+Run the CLI through your package manager (`npx hybld ...`, `pnpm exec hybld ...`) or an npm script.
 
 ```bash
-# Everything (first run)
+# The first full build: every article, every archive, sitemap, feed
 hybld build --all
 
-# Nothing changed? Everything skips, near-instantly
+# Run it again: nothing changed, everything skips in milliseconds
 hybld build --all
 
-# Publish an article in the CMS, then build only what changed
-hybld build --since last-build
-
-# Or target it directly (e.g. from a webhook)
-hybld build --slugs my-new-article
+# Smoke-test with a bounded scope first if your catalog is large
+hybld build --limit 50
 ```
 
-Output lands in `dist/` (React + Vite default) or `site/` (recommended for Next/Astro, since the framework owns its own build dir). Each build also refreshes the sitemap, the RSS feed (if enabled), the redirects map, and writes a changed-files report to `.hybld/last-build.json` for precise deploys.
+What you should see: a summary line like `built: 132  skipped: 0  failed: 0`, your pages under `dist/`, `sitemap.xml` (plus shards), `feed.xml`, and hybld's state in `.hybld/` (the SQLite manifest, the build lock, and `last-build.json`, the changed-files report).
 
-## The daily workflow
+Add `.hybld/` to `.gitignore` if you keep state out of git, or commit the manifest if your CI relies on it being present (see [Scaling](/operate/scaling/) for the trade-offs).
 
-1. A CMS webhook hits your `hybld serve` endpoint (or your own server calling the API) with the published post id: only that page and its listing pages rebuild.
-2. A cron job runs `hybld build --since last-build` periodically to catch scheduled posts and missed webhooks.
-3. Your deploy step reads `.hybld/last-build.json` (or runs `hybld sync`) and ships only the changed files.
+## 5. The incremental loop
 
-See [Deployment and operations](/operate/deployment/) for the full picture.
+Publish or edit an article in your CMS, then:
+
+```bash
+# Everything modified since the last sweep (plus deletions, when the adapter reports them)
+hybld build --since last-build
+
+# Or target it directly (what a webhook handler does)
+hybld build --slugs my-new-article
+hybld build --ids 123
+```
+
+Expected summary for one published article with the config above: `built: 4` (the article, the home page, two category archive pages), everything else untouched. `.hybld/last-build.json` lists exactly which files changed, which is what your deploy ships.
+
+## 6. Production wiring
+
+Three mechanisms cover publishing end to end (full detail in [Deployment](/operate/deployment/)):
+
+**Webhooks (seconds-fast updates).** Run the built-in server on your build host and point a CMS webhook at it:
+
+```bash
+hybld serve --host 0.0.0.0 --port 4600 --secret "$WEBHOOK_SECRET"
+# CMS webhook: POST /webhook/wordpress with the post id, or POST /rebuild
+# with any build scope as JSON. Header: x-hybld-secret.
+```
+
+**Cron sweep (the safety net, not optional).** Catches scheduled posts going live, missed webhooks, and CMS-side deletions:
+
+```bash
+*/10 * * * *  cd /srv/site && npx hybld build --since last-build --json >> /var/log/hybld.log
+0 3 * * 0     cd /srv/site && npx hybld status --reconcile --prune
+```
+
+**Deploy the diff.** After each build, ship only what changed:
+
+```bash
+hybld sync /var/www/site --delete --redirects nginx     # local/rsync-style hosting
+# or read .hybld/last-build.json and push exactly those paths to S3/CDN
+```
+
+## 7. Where to go next
+
+- Large catalog (100k to millions of pages)? Read [Scaling to large catalogs](/operate/scaling/) before your first full build: chunked CI builds, rate-limit budgeting, and manifest strategy.
+- Deploying app-code changes without a full rebuild: [code-staleness](/guides/concepts/#code-staleness) and `hybld build --stale`.
+- Something not behaving? [Troubleshooting](/operate/troubleshooting/) lists every error message and its fix.

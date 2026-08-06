@@ -2,7 +2,7 @@
 title: "Troubleshooting"
 description: "Error messages and their fixes, behavior questions, and environment notes."
 sidebar:
-  order: 2
+  order: 3
 ---
 ## Errors and what they mean
 
