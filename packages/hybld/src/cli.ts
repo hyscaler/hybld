@@ -3,6 +3,7 @@ import { Manifest } from "./manifest.js";
 import { Redirects } from "./redirects.js";
 import { startServer } from "./serve.js";
 import { pullManifest, pushManifest, syncOutput } from "./sync.js";
+import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import type { BuildOptions, BuildSummary } from "./types.js";
 
@@ -108,10 +109,24 @@ function printSummary(s: BuildSummary, json: boolean): void {
   if (s.reportPath) console.log(`  report: ${s.reportPath}`);
 }
 
+function cliVersion(): string {
+  try {
+    const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+    return pkg.version;
+  } catch {
+    return "unknown";
+  }
+}
+
 async function main(): Promise<number> {
   const { command, positionals, flags } = parseArgs(process.argv.slice(2));
   const json = Boolean(flags.json);
   const configFile = typeof flags.config === "string" ? flags.config : undefined;
+
+  if (command === "--version" || command === "-v" || command === "version" || flags.version) {
+    console.log(cliVersion());
+    return 0;
+  }
 
   if (command === "build") {
     const opts = toBuildOptions(flags);
@@ -307,7 +322,8 @@ usage:
   hybld manifest export|import <file> | merge <other.db> | push|pull --url <u>
 
 shared flags: --config <path> --concurrency <n> --dry-run --force
-              --no-dependents --fail-fast --wait --json --verbose`);
+              --no-dependents --fail-fast --wait --json --verbose
+              --version`);
   return command === "help" ? 0 : 1;
 }
 
