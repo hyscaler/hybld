@@ -1,0 +1,28 @@
+---
+import { hybldPaths } from "@hybld/astro";
+
+export async function getStaticPaths() {
+  return hybldPaths("category", (data, job) => ({
+    params: { slug: job.item.slug },
+    props: { category: data },
+  }));
+}
+
+const { category } = Astro.props;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>{category.name} | Astro Demo</title>
+  </head>
+  <body>
+    <p><a href="/">Astro Demo</a></p>
+    <h1>Category: {category.name}</h1>
+    <ul>
+      {category.items.map((a: any) => (
+        <li><a href={`/articles/${a.slug}/`}>{a.title}</a></li>
+      ))}
+    </ul>
+  </body>
+</html>

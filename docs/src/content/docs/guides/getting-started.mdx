@@ -1,0 +1,105 @@
+---
+title: "Getting Started"
+description: "Install hybld, write the minimum config, and run your first incremental builds."
+sidebar:
+  order: 1
+---
+
+import { Tabs, TabItem } from "@astrojs/starlight/components";
+
+## Install
+
+<Tabs syncKey="pkg">
+  <TabItem label="npm">
+    ```bash
+    # React + Vite project
+    npm install -D hybld @hybld/adapter-wordpress
+
+    # Next.js project (static export)
+    npm install -D hybld @hybld/next @hybld/adapter-wordpress
+
+    # Astro project
+    npm install -D hybld @hybld/astro @hybld/adapter-wordpress
+    ```
+  </TabItem>
+  <TabItem label="pnpm">
+    ```bash
+    # React + Vite project
+    pnpm add -D hybld @hybld/adapter-wordpress
+
+    # Next.js project (static export)
+    pnpm add -D hybld @hybld/next @hybld/adapter-wordpress
+
+    # Astro project
+    pnpm add -D hybld @hybld/astro @hybld/adapter-wordpress
+    ```
+  </TabItem>
+  <TabItem label="yarn">
+    ```bash
+    # React + Vite project
+    yarn add -D hybld @hybld/adapter-wordpress
+
+    # Next.js project (static export)
+    yarn add -D hybld @hybld/next @hybld/adapter-wordpress
+
+    # Astro project
+    yarn add -D hybld @hybld/astro @hybld/adapter-wordpress
+    ```
+  </TabItem>
+</Tabs>
+
+Swap `@hybld/adapter-wordpress` for `@hybld/adapter-strapi`, `@hybld/adapter-contentful`, `@hybld/adapter-sanity`, or use the generic helpers from `hybld/adapters` (see [CMS adapters](/reference/adapters/)).
+
+## The minimum config
+
+Every project gets a `hybld.config.ts` (Next projects: use `.mjs`, see the [Next guide](/frameworks/nextjs/)):
+
+```ts
+import { defineConfig } from "hybld";
+import { wordpress } from "@hybld/adapter-wordpress";
+
+export default defineConfig({
+  adapter: wordpress({ baseUrl: "https://cms.example.com" }),
+  pages: {
+    article: {
+      route: (a) => `/articles/${a.slug}/`,
+      data: (a) => ({ title: a.title.rendered, html: a.content.rendered }),
+      dependents: (a) => ["/"],
+    },
+    home: {
+      route: () => "/",
+      data: async ({ cms }) => ({ latest: await cms.list({ perPage: 10 }) }),
+    },
+  },
+});
+```
+
+The framework-specific wiring (entry files for React + Vite, helper calls for Next/Astro) is covered in each framework guide. The three example apps in `examples/` are complete working references.
+
+## First builds
+
+Run the CLI through your package manager's runner (`npx hybld ...`, `pnpm exec hybld ...`, `yarn hybld ...`) or from an npm script:
+
+```bash
+# Everything (first run)
+hybld build --all
+
+# Nothing changed? Everything skips, near-instantly
+hybld build --all
+
+# Publish an article in the CMS, then build only what changed
+hybld build --since last-build
+
+# Or target it directly (e.g. from a webhook)
+hybld build --slugs my-new-article
+```
+
+Output lands in `dist/` (React + Vite default) or `site/` (recommended for Next/Astro, since the framework owns its own build dir). Each build also refreshes the sitemap, the RSS feed (if enabled), the redirects map, and writes a changed-files report to `.hybld/last-build.json` for precise deploys.
+
+## The daily workflow
+
+1. A CMS webhook hits your `hybld serve` endpoint (or your own server calling the API) with the published post id: only that page and its listing pages rebuild.
+2. A cron job runs `hybld build --since last-build` periodically to catch scheduled posts and missed webhooks.
+3. Your deploy step reads `.hybld/last-build.json` (or runs `hybld sync`) and ships only the changed files.
+
+See [Deployment and operations](/operate/deployment/) for the full picture.

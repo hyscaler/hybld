@@ -1,0 +1,20 @@
+{
+  "name": "next-demo",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "build:all": "hybld build --all",
+    "build:new": "hybld build --since last-build"
+  },
+  "dependencies": {
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@hybld/adapter-wordpress": "workspace:*",
+    "@hybld/next": "workspace:*",
+    "hybld": "workspace:*"
+  },
+  "type": "module"
+}

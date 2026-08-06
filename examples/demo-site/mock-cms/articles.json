@@ -1,0 +1,1282 @@
+[
+  {
+    "id": 1,
+    "slug": "demo-article-1",
+    "status": "publish",
+    "date": "2026-06-02T09:00:00",
+    "modified": "2026-07-31T05:58:50.120Z",
+    "title": {
+      "rendered": "Demo Article 1: notes on life"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 1 in the Life category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>1</strong>, filed under Life.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "life",
+    "categories": [
+      2
+    ]
+  },
+  {
+    "id": 2,
+    "slug": "demo-article-2",
+    "status": "publish",
+    "date": "2026-06-03T09:00:00",
+    "modified": "2026-06-03T09:00:00",
+    "title": {
+      "rendered": "Demo Article 2: notes on news"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 2 in the News category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>2</strong>, filed under News.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "news",
+    "categories": [
+      3
+    ]
+  },
+  {
+    "id": 3,
+    "slug": "demo-article-3",
+    "status": "publish",
+    "date": "2026-06-04T09:00:00",
+    "modified": "2026-06-04T09:00:00",
+    "title": {
+      "rendered": "Demo Article 3: notes on tech"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 3 in the Tech category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>3</strong>, filed under Tech.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "tech",
+    "categories": [
+      1
+    ]
+  },
+  {
+    "id": 4,
+    "slug": "demo-article-4",
+    "status": "publish",
+    "date": "2026-06-05T09:00:00",
+    "modified": "2026-06-05T09:00:00",
+    "title": {
+      "rendered": "Demo Article 4: notes on life"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 4 in the Life category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>4</strong>, filed under Life.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "life",
+    "categories": [
+      2
+    ]
+  },
+  {
+    "id": 5,
+    "slug": "demo-article-5",
+    "status": "publish",
+    "date": "2026-06-06T09:00:00",
+    "modified": "2026-06-06T09:00:00",
+    "title": {
+      "rendered": "Demo Article 5: notes on news"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 5 in the News category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>5</strong>, filed under News.</p><p><img src=\"http://localhost:4399/media/sample.png\" alt=\"sample\"></p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "news",
+    "categories": [
+      3
+    ]
+  },
+  {
+    "id": 6,
+    "slug": "demo-article-6",
+    "status": "publish",
+    "date": "2026-06-07T09:00:00",
+    "modified": "2026-06-07T09:00:00",
+    "title": {
+      "rendered": "Demo Article 6: notes on tech"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 6 in the Tech category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>6</strong>, filed under Tech.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "tech",
+    "categories": [
+      1
+    ]
+  },
+  {
+    "id": 7,
+    "slug": "demo-article-7",
+    "status": "publish",
+    "date": "2026-06-08T09:00:00",
+    "modified": "2026-06-08T09:00:00",
+    "title": {
+      "rendered": "Demo Article 7: notes on life"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 7 in the Life category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>7</strong>, filed under Life.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "life",
+    "categories": [
+      2
+    ]
+  },
+  {
+    "id": 8,
+    "slug": "demo-article-8",
+    "status": "publish",
+    "date": "2026-06-09T09:00:00",
+    "modified": "2026-06-09T09:00:00",
+    "title": {
+      "rendered": "Demo Article 8: notes on news"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 8 in the News category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>8</strong>, filed under News.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "news",
+    "categories": [
+      3
+    ]
+  },
+  {
+    "id": 9,
+    "slug": "demo-article-9",
+    "status": "publish",
+    "date": "2026-06-10T09:00:00",
+    "modified": "2026-06-10T09:00:00",
+    "title": {
+      "rendered": "Demo Article 9: notes on tech"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 9 in the Tech category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>9</strong>, filed under Tech.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "tech",
+    "categories": [
+      1
+    ]
+  },
+  {
+    "id": 10,
+    "slug": "demo-article-10",
+    "status": "publish",
+    "date": "2026-06-11T09:00:00",
+    "modified": "2026-06-11T09:00:00",
+    "title": {
+      "rendered": "Demo Article 10: notes on life"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 10 in the Life category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>10</strong>, filed under Life.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "life",
+    "categories": [
+      2
+    ]
+  },
+  {
+    "id": 11,
+    "slug": "demo-article-11",
+    "status": "publish",
+    "date": "2026-06-12T09:00:00",
+    "modified": "2026-06-12T09:00:00",
+    "title": {
+      "rendered": "Demo Article 11: notes on news"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 11 in the News category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>11</strong>, filed under News.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "news",
+    "categories": [
+      3
+    ]
+  },
+  {
+    "id": 12,
+    "slug": "demo-article-12",
+    "status": "publish",
+    "date": "2026-06-13T09:00:00",
+    "modified": "2026-06-13T09:00:00",
+    "title": {
+      "rendered": "Demo Article 12: notes on tech"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 12 in the Tech category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>12</strong>, filed under Tech.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "tech",
+    "categories": [
+      1
+    ]
+  },
+  {
+    "id": 13,
+    "slug": "demo-article-13",
+    "status": "publish",
+    "date": "2026-06-14T09:00:00",
+    "modified": "2026-06-14T09:00:00",
+    "title": {
+      "rendered": "Demo Article 13: notes on life"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 13 in the Life category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>13</strong>, filed under Life.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "life",
+    "categories": [
+      2
+    ]
+  },
+  {
+    "id": 14,
+    "slug": "demo-article-14",
+    "status": "publish",
+    "date": "2026-06-15T09:00:00",
+    "modified": "2026-06-15T09:00:00",
+    "title": {
+      "rendered": "Demo Article 14: notes on news"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 14 in the News category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>14</strong>, filed under News.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "news",
+    "categories": [
+      3
+    ]
+  },
+  {
+    "id": 15,
+    "slug": "renamed-15",
+    "status": "publish",
+    "date": "2026-06-16T09:00:00",
+    "modified": "2026-07-20T10:22:44.520Z",
+    "title": {
+      "rendered": "Demo Article 15: notes on tech"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 15 in the Tech category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>15</strong>, filed under Tech.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "tech",
+    "categories": [
+      1
+    ]
+  },
+  {
+    "id": 16,
+    "slug": "demo-article-16",
+    "status": "publish",
+    "date": "2026-06-17T09:00:00",
+    "modified": "2026-06-17T09:00:00",
+    "title": {
+      "rendered": "Demo Article 16: notes on life"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 16 in the Life category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>16</strong>, filed under Life.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "life",
+    "categories": [
+      2
+    ]
+  },
+  {
+    "id": 17,
+    "slug": "demo-article-17",
+    "status": "publish",
+    "date": "2026-06-18T09:00:00",
+    "modified": "2026-06-18T09:00:00",
+    "title": {
+      "rendered": "Demo Article 17: notes on news"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 17 in the News category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>17</strong>, filed under News.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "news",
+    "categories": [
+      3
+    ]
+  },
+  {
+    "id": 18,
+    "slug": "demo-article-18",
+    "status": "publish",
+    "date": "2026-06-19T09:00:00",
+    "modified": "2026-06-19T09:00:00",
+    "title": {
+      "rendered": "Demo Article 18: notes on tech"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 18 in the Tech category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>18</strong>, filed under Tech.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "tech",
+    "categories": [
+      1
+    ]
+  },
+  {
+    "id": 19,
+    "slug": "demo-article-19",
+    "status": "publish",
+    "date": "2026-06-20T09:00:00",
+    "modified": "2026-06-20T09:00:00",
+    "title": {
+      "rendered": "Demo Article 19: notes on life"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 19 in the Life category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>19</strong>, filed under Life.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "life",
+    "categories": [
+      2
+    ]
+  },
+  {
+    "id": 20,
+    "slug": "demo-article-20",
+    "status": "publish",
+    "date": "2026-06-21T09:00:00",
+    "modified": "2026-06-21T09:00:00",
+    "title": {
+      "rendered": "Demo Article 20: notes on news"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 20 in the News category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>20</strong>, filed under News.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "news",
+    "categories": [
+      3
+    ]
+  },
+  {
+    "id": 21,
+    "slug": "demo-article-21",
+    "status": "publish",
+    "date": "2026-06-22T09:00:00",
+    "modified": "2026-06-22T09:00:00",
+    "title": {
+      "rendered": "Demo Article 21: notes on tech"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 21 in the Tech category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>21</strong>, filed under Tech.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "tech",
+    "categories": [
+      1
+    ]
+  },
+  {
+    "id": 22,
+    "slug": "demo-article-22",
+    "status": "publish",
+    "date": "2026-06-23T09:00:00",
+    "modified": "2026-06-23T09:00:00",
+    "title": {
+      "rendered": "Demo Article 22: notes on life"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 22 in the Life category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>22</strong>, filed under Life.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "life",
+    "categories": [
+      2
+    ]
+  },
+  {
+    "id": 23,
+    "slug": "demo-article-23",
+    "status": "publish",
+    "date": "2026-06-24T09:00:00",
+    "modified": "2026-06-24T09:00:00",
+    "title": {
+      "rendered": "Demo Article 23: notes on news"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 23 in the News category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>23</strong>, filed under News.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "news",
+    "categories": [
+      3
+    ]
+  },
+  {
+    "id": 24,
+    "slug": "demo-article-24",
+    "status": "publish",
+    "date": "2026-06-25T09:00:00",
+    "modified": "2026-06-25T09:00:00",
+    "title": {
+      "rendered": "Demo Article 24: notes on tech"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 24 in the Tech category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>24</strong>, filed under Tech.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "tech",
+    "categories": [
+      1
+    ]
+  },
+  {
+    "id": 25,
+    "slug": "demo-article-25",
+    "status": "publish",
+    "date": "2026-06-26T09:00:00",
+    "modified": "2026-06-26T09:00:00",
+    "title": {
+      "rendered": "Demo Article 25: notes on life"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 25 in the Life category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>25</strong>, filed under Life.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "life",
+    "categories": [
+      2
+    ]
+  },
+  {
+    "id": 26,
+    "slug": "demo-article-26",
+    "status": "publish",
+    "date": "2026-06-27T09:00:00",
+    "modified": "2026-06-27T09:00:00",
+    "title": {
+      "rendered": "Demo Article 26: notes on news"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 26 in the News category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>26</strong>, filed under News.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "news",
+    "categories": [
+      3
+    ]
+  },
+  {
+    "id": 27,
+    "slug": "demo-article-27",
+    "status": "publish",
+    "date": "2026-06-01T09:00:00",
+    "modified": "2026-06-01T09:00:00",
+    "title": {
+      "rendered": "Demo Article 27: notes on tech"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 27 in the Tech category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>27</strong>, filed under Tech.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "tech",
+    "categories": [
+      1
+    ]
+  },
+  {
+    "id": 28,
+    "slug": "demo-article-28",
+    "status": "publish",
+    "date": "2026-06-02T09:00:00",
+    "modified": "2026-06-02T09:00:00",
+    "title": {
+      "rendered": "Demo Article 28: notes on life"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 28 in the Life category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>28</strong>, filed under Life.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "life",
+    "categories": [
+      2
+    ]
+  },
+  {
+    "id": 29,
+    "slug": "demo-article-29",
+    "status": "publish",
+    "date": "2026-06-03T09:00:00",
+    "modified": "2026-06-03T09:00:00",
+    "title": {
+      "rendered": "Demo Article 29: notes on news"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 29 in the News category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>29</strong>, filed under News.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "news",
+    "categories": [
+      3
+    ]
+  },
+  {
+    "id": 30,
+    "slug": "demo-article-30",
+    "status": "publish",
+    "date": "2026-06-04T09:00:00",
+    "modified": "2026-06-04T09:00:00",
+    "title": {
+      "rendered": "Demo Article 30: notes on tech"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 30 in the Tech category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>30</strong>, filed under Tech.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "tech",
+    "categories": [
+      1
+    ]
+  },
+  {
+    "id": 31,
+    "slug": "demo-article-31",
+    "status": "publish",
+    "date": "2026-06-05T09:00:00",
+    "modified": "2026-06-05T09:00:00",
+    "title": {
+      "rendered": "Demo Article 31: notes on life"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 31 in the Life category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>31</strong>, filed under Life.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "life",
+    "categories": [
+      2
+    ]
+  },
+  {
+    "id": 32,
+    "slug": "demo-article-32",
+    "status": "publish",
+    "date": "2026-06-06T09:00:00",
+    "modified": "2026-06-06T09:00:00",
+    "title": {
+      "rendered": "Demo Article 32: notes on news"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 32 in the News category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>32</strong>, filed under News.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "news",
+    "categories": [
+      3
+    ]
+  },
+  {
+    "id": 33,
+    "slug": "demo-article-33",
+    "status": "publish",
+    "date": "2026-06-07T09:00:00",
+    "modified": "2026-06-07T09:00:00",
+    "title": {
+      "rendered": "Demo Article 33: notes on tech"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 33 in the Tech category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>33</strong>, filed under Tech.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "tech",
+    "categories": [
+      1
+    ]
+  },
+  {
+    "id": 34,
+    "slug": "demo-article-34",
+    "status": "publish",
+    "date": "2026-06-08T09:00:00",
+    "modified": "2026-06-08T09:00:00",
+    "title": {
+      "rendered": "Demo Article 34: notes on life"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 34 in the Life category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>34</strong>, filed under Life.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "life",
+    "categories": [
+      2
+    ]
+  },
+  {
+    "id": 35,
+    "slug": "demo-article-35",
+    "status": "publish",
+    "date": "2026-06-09T09:00:00",
+    "modified": "2026-06-09T09:00:00",
+    "title": {
+      "rendered": "Demo Article 35: notes on news"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 35 in the News category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>35</strong>, filed under News.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "news",
+    "categories": [
+      3
+    ]
+  },
+  {
+    "id": 36,
+    "slug": "demo-article-36",
+    "status": "publish",
+    "date": "2026-06-10T09:00:00",
+    "modified": "2026-06-10T09:00:00",
+    "title": {
+      "rendered": "Demo Article 36: notes on tech"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 36 in the Tech category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>36</strong>, filed under Tech.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "tech",
+    "categories": [
+      1
+    ]
+  },
+  {
+    "id": 37,
+    "slug": "demo-article-37",
+    "status": "publish",
+    "date": "2026-06-11T09:00:00",
+    "modified": "2026-06-11T09:00:00",
+    "title": {
+      "rendered": "Demo Article 37: notes on life"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 37 in the Life category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>37</strong>, filed under Life.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "life",
+    "categories": [
+      2
+    ]
+  },
+  {
+    "id": 38,
+    "slug": "demo-article-38",
+    "status": "publish",
+    "date": "2026-06-12T09:00:00",
+    "modified": "2026-06-12T09:00:00",
+    "title": {
+      "rendered": "Demo Article 38: notes on news"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 38 in the News category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>38</strong>, filed under News.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "news",
+    "categories": [
+      3
+    ]
+  },
+  {
+    "id": 39,
+    "slug": "demo-article-39",
+    "status": "publish",
+    "date": "2026-06-13T09:00:00",
+    "modified": "2026-06-13T09:00:00",
+    "title": {
+      "rendered": "Demo Article 39: notes on tech"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 39 in the Tech category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>39</strong>, filed under Tech.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "tech",
+    "categories": [
+      1
+    ]
+  },
+  {
+    "id": 40,
+    "slug": "astro-renamed-40",
+    "status": "publish",
+    "date": "2026-06-14T09:00:00",
+    "modified": "2026-07-20T14:01:32.554Z",
+    "title": {
+      "rendered": "Demo Article 40: notes on life"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 40 in the Life category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>40</strong>, filed under Life.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "life",
+    "categories": [
+      2
+    ]
+  },
+  {
+    "id": 41,
+    "slug": "demo-article-41",
+    "status": "publish",
+    "date": "2026-06-15T09:00:00",
+    "modified": "2026-06-15T09:00:00",
+    "title": {
+      "rendered": "Demo Article 41: notes on news"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 41 in the News category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>41</strong>, filed under News.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "news",
+    "categories": [
+      3
+    ]
+  },
+  {
+    "id": 42,
+    "slug": "demo-article-42",
+    "status": "publish",
+    "date": "2026-06-16T09:00:00",
+    "modified": "2026-06-16T09:00:00",
+    "title": {
+      "rendered": "Demo Article 42: notes on tech"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 42 in the Tech category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>42</strong>, filed under Tech.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "tech",
+    "categories": [
+      1
+    ]
+  },
+  {
+    "id": 43,
+    "slug": "demo-article-43",
+    "status": "publish",
+    "date": "2026-06-17T09:00:00",
+    "modified": "2026-06-17T09:00:00",
+    "title": {
+      "rendered": "Demo Article 43: notes on life"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 43 in the Life category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>43</strong>, filed under Life.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "life",
+    "categories": [
+      2
+    ]
+  },
+  {
+    "id": 44,
+    "slug": "demo-article-44",
+    "status": "publish",
+    "date": "2026-06-18T09:00:00",
+    "modified": "2026-06-18T09:00:00",
+    "title": {
+      "rendered": "Demo Article 44: notes on news"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 44 in the News category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>44</strong>, filed under News.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "news",
+    "categories": [
+      3
+    ]
+  },
+  {
+    "id": 45,
+    "slug": "demo-article-45",
+    "status": "publish",
+    "date": "2026-06-19T09:00:00",
+    "modified": "2026-06-19T09:00:00",
+    "title": {
+      "rendered": "Demo Article 45: notes on tech"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 45 in the Tech category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>45</strong>, filed under Tech.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "tech",
+    "categories": [
+      1
+    ]
+  },
+  {
+    "id": 46,
+    "slug": "demo-article-46",
+    "status": "publish",
+    "date": "2026-06-20T09:00:00",
+    "modified": "2026-06-20T09:00:00",
+    "title": {
+      "rendered": "Demo Article 46: notes on life"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 46 in the Life category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>46</strong>, filed under Life.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "life",
+    "categories": [
+      2
+    ]
+  },
+  {
+    "id": 47,
+    "slug": "demo-article-47",
+    "status": "publish",
+    "date": "2026-06-21T09:00:00",
+    "modified": "2026-06-21T09:00:00",
+    "title": {
+      "rendered": "Demo Article 47: notes on news"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 47 in the News category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>47</strong>, filed under News.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "news",
+    "categories": [
+      3
+    ]
+  },
+  {
+    "id": 48,
+    "slug": "demo-article-48",
+    "status": "publish",
+    "date": "2026-06-22T09:00:00",
+    "modified": "2026-06-22T09:00:00",
+    "title": {
+      "rendered": "Demo Article 48: notes on tech"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 48 in the Tech category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>48</strong>, filed under Tech.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "tech",
+    "categories": [
+      1
+    ]
+  },
+  {
+    "id": 49,
+    "slug": "demo-article-49",
+    "status": "publish",
+    "date": "2026-06-23T09:00:00",
+    "modified": "2026-06-23T09:00:00",
+    "title": {
+      "rendered": "Demo Article 49: notes on life"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 49 in the Life category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>49</strong>, filed under Life.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "life",
+    "categories": [
+      2
+    ]
+  },
+  {
+    "id": 50,
+    "slug": "demo-article-50",
+    "status": "publish",
+    "date": "2026-06-24T09:00:00",
+    "modified": "2026-06-24T09:00:00",
+    "title": {
+      "rendered": "Demo Article 50: notes on news"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 50 in the News category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>50</strong>, filed under News.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "news",
+    "categories": [
+      3
+    ]
+  },
+  {
+    "id": 51,
+    "slug": "demo-article-51",
+    "status": "publish",
+    "date": "2026-06-25T09:00:00",
+    "modified": "2026-06-25T09:00:00",
+    "title": {
+      "rendered": "Demo Article 51: notes on tech"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 51 in the Tech category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>51</strong>, filed under Tech.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "tech",
+    "categories": [
+      1
+    ]
+  },
+  {
+    "id": 52,
+    "slug": "demo-article-52",
+    "status": "publish",
+    "date": "2026-06-26T09:00:00",
+    "modified": "2026-06-26T09:00:00",
+    "title": {
+      "rendered": "Demo Article 52: notes on life"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 52 in the Life category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>52</strong>, filed under Life.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "life",
+    "categories": [
+      2
+    ]
+  },
+  {
+    "id": 53,
+    "slug": "demo-article-53",
+    "status": "publish",
+    "date": "2026-06-27T09:00:00",
+    "modified": "2026-06-27T09:00:00",
+    "title": {
+      "rendered": "Demo Article 53: notes on news"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 53 in the News category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>53</strong>, filed under News.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "news",
+    "categories": [
+      3
+    ]
+  },
+  {
+    "id": 54,
+    "slug": "demo-article-54",
+    "status": "publish",
+    "date": "2026-06-01T09:00:00",
+    "modified": "2026-06-01T09:00:00",
+    "title": {
+      "rendered": "Demo Article 54: notes on tech"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 54 in the Tech category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>54</strong>, filed under Tech.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "tech",
+    "categories": [
+      1
+    ]
+  },
+  {
+    "id": 55,
+    "slug": "demo-article-55",
+    "status": "publish",
+    "date": "2026-06-02T09:00:00",
+    "modified": "2026-06-02T09:00:00",
+    "title": {
+      "rendered": "Demo Article 55: notes on life"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 55 in the Life category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>55</strong>, filed under Life.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "life",
+    "categories": [
+      2
+    ]
+  },
+  {
+    "id": 56,
+    "slug": "demo-article-56",
+    "status": "publish",
+    "date": "2026-06-03T09:00:00",
+    "modified": "2026-06-03T09:00:00",
+    "title": {
+      "rendered": "Demo Article 56: notes on news"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 56 in the News category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>56</strong>, filed under News.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "news",
+    "categories": [
+      3
+    ]
+  },
+  {
+    "id": 57,
+    "slug": "demo-article-57",
+    "status": "publish",
+    "date": "2026-06-04T09:00:00",
+    "modified": "2026-06-04T09:00:00",
+    "title": {
+      "rendered": "Demo Article 57: notes on tech"
+    },
+    "excerpt": {
+      "rendered": "<p>Short summary of demo article 57 in the Tech category.</p>"
+    },
+    "content": {
+      "rendered": "<p>This is the body of demo article <strong>57</strong>, filed under Tech.</p><p>It exists so hybld has something to prerender.</p>"
+    },
+    "category_slug": "tech",
+    "categories": [
+      1
+    ]
+  },
+  {
+    "id": 100,
+    "slug": "upcoming-draft",
+    "status": "draft",
+    "date": "2026-07-21T09:00:00",
+    "modified": "2026-07-21T09:00:00",
+    "title": {
+      "rendered": "Upcoming: a draft article"
+    },
+    "excerpt": {
+      "rendered": "<p>Not published yet.</p>"
+    },
+    "content": {
+      "rendered": "<p>This draft is only visible through preview builds.</p>"
+    },
+    "category_slug": "news",
+    "categories": [
+      3
+    ]
+  },
+  {
+    "id": 61,
+    "slug": "post-refactor-test",
+    "status": "publish",
+    "date": "2026-07-20T13:25:35.519Z",
+    "modified": "2026-07-20T13:25:35.519Z",
+    "title": {
+      "rendered": "Post-refactor smoke test"
+    },
+    "excerpt": {
+      "rendered": "<p>x</p>"
+    },
+    "content": {
+      "rendered": "<p>Testing the batch pipeline.</p>"
+    },
+    "category_slug": "life",
+    "categories": [
+      2
+    ]
+  },
+  {
+    "id": 70,
+    "slug": "astro-incremental-works",
+    "status": "trash",
+    "date": "2026-07-20T13:32:36.686Z",
+    "modified": "2026-07-20T13:32:52.377Z",
+    "title": {
+      "rendered": "Astro incremental builds work"
+    },
+    "excerpt": {
+      "rendered": "<p>Scoped astro build.</p>"
+    },
+    "content": {
+      "rendered": "<p>Only this page and dependents were built by astro.</p>"
+    },
+    "category_slug": "tech",
+    "categories": [
+      1
+    ]
+  },
+  {
+    "id": 80,
+    "slug": "next-incremental-works",
+    "status": "trash",
+    "date": "2026-07-20T13:39:23.054Z",
+    "modified": "2026-07-20T13:39:27.895Z",
+    "title": {
+      "rendered": "Next incremental builds work"
+    },
+    "excerpt": {
+      "rendered": "<p>Scoped next build.</p>"
+    },
+    "content": {
+      "rendered": "<p>Only this page and dependents were built by next.</p>"
+    },
+    "category_slug": "life",
+    "categories": [
+      2
+    ]
+  },
+  {
+    "id": 81,
+    "slug": "next-delete-cycle",
+    "status": "trash",
+    "date": "2026-07-20T13:42:47.453Z",
+    "modified": "2026-07-20T13:42:52.440Z",
+    "title": {
+      "rendered": "Delete cycle test"
+    },
+    "excerpt": {
+      "rendered": "<p>x</p>"
+    },
+    "content": {
+      "rendered": "<p>y</p>"
+    },
+    "category_slug": "news",
+    "categories": [
+      3
+    ]
+  },
+  {
+    "id": 82,
+    "slug": "final-next-check",
+    "status": "publish",
+    "date": "2026-07-20T13:47:47.417Z",
+    "modified": "2026-07-20T13:47:47.417Z",
+    "title": {
+      "rendered": "Final Next check"
+    },
+    "excerpt": {
+      "rendered": "<p>f</p>"
+    },
+    "content": {
+      "rendered": "<p>final</p>"
+    },
+    "category_slug": "tech",
+    "categories": [
+      1
+    ]
+  },
+  {
+    "id": 90,
+    "slug": "pages-router-works",
+    "status": "trash",
+    "date": "2026-07-21T04:31:02.936Z",
+    "modified": "2026-07-21T04:31:07.738Z",
+    "title": {
+      "rendered": "Pages Router works"
+    },
+    "excerpt": {
+      "rendered": "<p>p</p>"
+    },
+    "content": {
+      "rendered": "<p>getStaticPaths scoped build.</p>"
+    },
+    "category_slug": "tech",
+    "categories": [
+      1
+    ]
+  }
+]

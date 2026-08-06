@@ -1,0 +1,19 @@
+{
+  "name": "astro-demo",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build:all": "hybld build --all",
+    "build:new": "hybld build --since last-build"
+  },
+  "dependencies": {
+    "astro": "^5.0.0"
+  },
+  "devDependencies": {
+    "@hybld/adapter-wordpress": "workspace:*",
+    "@hybld/astro": "workspace:*",
+    "typescript": "^5.6.0",
+    "hybld": "workspace:*"
+  }
+}

@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Package build output
+packages/*/dist/
+
+# hybld state and outputs (examples)
+.hybld/
+examples/*/dist/
+examples/*/site/
+examples/*/out/
+examples/*/.next/
+examples/*/.astro/
+examples/*/fake-out/
+examples/*/build-count.txt
+
+# Docs site build
+docs/dist/
+docs/.astro/
+
+# Misc
+*.log
+.DS_Store

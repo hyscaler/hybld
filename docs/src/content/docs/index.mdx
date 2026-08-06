@@ -1,0 +1,47 @@
+---
+title: hybld documentation
+description: "Incremental static builds for React + Vite, Next.js, and Astro sites backed by a headless CMS. Build one page, not a million."
+template: splash
+hero:
+  title: Build one page, not a million.
+  tagline: hybld tracks what your CMS-backed site has already built and rebuilds only what changed. Publish an article, rebuild one page and its listings, in seconds. <em>React + Vite / Next.js / Astro</em>
+  image:
+    file: ../../assets/hero.svg
+    alt: ""
+  actions:
+    - text: Get started
+      link: /guides/getting-started/
+      icon: right-arrow
+    - text: How it works
+      link: /guides/concepts/
+      variant: minimal
+      icon: open-book
+---
+
+import { Card, CardGrid, LinkCard } from "@astrojs/starlight/components";
+
+<CardGrid stagger>
+  <Card title="Incremental by design" icon="rocket">
+    A SQLite [manifest](/guides/concepts/) remembers every built page. New article? One build. Edited article? One build plus its [listing pages](/guides/concepts/#dependents). Deleted? Removed, with redirects for renames and the sitemap kept current.
+  </Card>
+  <Card title="Your framework, your renderer" icon="puzzle">
+    [React + Vite](/frameworks/react-vite/) renders through hybld's own engine with millisecond warm rebuilds. [Next.js](/frameworks/nextjs/) and [Astro](/frameworks/astro/) keep their own builds; hybld scopes them to just the changed pages and merges the output.
+  </Card>
+  <Card title="Any CMS" icon="setting">
+    Presets for [WordPress, Strapi, Contentful, and Sanity](/reference/adapters/), generic REST and GraphQL helpers for everything else, all behind one rate-limited, retrying, memoizing HTTP layer that never hammers your CMS.
+  </Card>
+  <Card title="Operations included" icon="approve-check">
+    A [webhook server](/operate/deployment/) with ISR-style regeneration, precise [deploy diffs](/reference/cli/#hybld-sync-targetdir---delete---redirects-netlifynginx), chunked CI full builds, sharded sitemaps, RSS, and asset garbage collection.
+  </Card>
+</CardGrid>
+
+## Where to go next
+
+<CardGrid>
+  <LinkCard title="Getting started" description="Install, configure, and run your first incremental build." href="/guides/getting-started/" />
+  <LinkCard title="Concepts" description="The manifest, scopes, hashing, dependents, and the two rendering strategies." href="/guides/concepts/" />
+  <LinkCard title="Configuration reference" description="Every option in hybld.config." href="/reference/configuration/" />
+  <LinkCard title="CLI reference" description="Every command and flag." href="/reference/cli/" />
+  <LinkCard title="Deployment" description="Webhooks, cron sweeps, and shipping only changed files." href="/operate/deployment/" />
+  <LinkCard title="Troubleshooting" description="Error messages and their fixes." href="/operate/troubleshooting/" />
+</CardGrid>

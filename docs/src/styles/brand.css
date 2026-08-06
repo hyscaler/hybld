@@ -1,0 +1,228 @@
+/* hybld brand theme for Starlight. Identity: an engineering tool, precise
+   and incremental. Emerald accent on a deep slate-green ink; Space Grotesk
+   display over Inter body; JetBrains Mono where the tool speaks (code,
+   sidebar group labels, the hero's emphasized phrase). */
+
+@font-face { font-family: "Space Grotesk"; font-weight: 600; font-display: swap; src: url("/fonts/space-grotesk-600.woff2") format("woff2"); }
+@font-face { font-family: "Space Grotesk"; font-weight: 700; font-display: swap; src: url("/fonts/space-grotesk-700.woff2") format("woff2"); }
+@font-face { font-family: "Inter"; font-weight: 400; font-display: swap; src: url("/fonts/inter-400.woff2") format("woff2"); }
+@font-face { font-family: "Inter"; font-weight: 500; font-display: swap; src: url("/fonts/inter-500.woff2") format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-weight: 400; font-display: swap; src: url("/fonts/jetbrains-mono-400.woff2") format("woff2"); }
+
+:root {
+  --sl-font: "Inter", system-ui, sans-serif;
+  --sl-font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --vg-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+}
+
+/* Dark: the terminal at night. Slate-green ink, emerald signal. */
+:root[data-theme="dark"] {
+  --sl-color-accent-low: #0b3527;
+  --sl-color-accent: #10b981;
+  --sl-color-accent-high: #7df0c4;
+  --sl-color-white: #f4faf7;
+  --sl-color-gray-1: #dcebe3;
+  --sl-color-gray-2: #b0c6bb;
+  --sl-color-gray-3: #7e9689;
+  --sl-color-gray-4: #4d6156;
+  --sl-color-gray-5: #263831;
+  --sl-color-gray-6: #14221c;
+  --sl-color-black: #0b1512;
+  --sl-color-bg-nav: color-mix(in oklab, #0b1512, transparent 8%);
+  --sl-color-bg-sidebar: #0e1a15;
+}
+
+/* Light: graph paper. */
+:root[data-theme="light"] {
+  --sl-color-accent-low: #d4f3e6;
+  --sl-color-accent: #0f8a5f;
+  --sl-color-accent-high: #0a5c40;
+  --sl-color-white: #0b1512;
+  --sl-color-gray-1: #1d2b25;
+  --sl-color-gray-2: #3b4d44;
+  --sl-color-gray-3: #5d7268;
+  --sl-color-gray-4: #8ba396;
+  --sl-color-gray-5: #cfdfd6;
+  --sl-color-gray-6: #eaf3ee;
+  --sl-color-gray-7: #f4f9f6;
+  --sl-color-black: #fbfdfc;
+  --sl-color-bg-nav: color-mix(in oklab, #fbfdfc, transparent 8%);
+}
+
+/* Display face for headings and the site title. */
+h1, h2, h3, h4, .site-title, .hero h1 {
+  font-family: var(--vg-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+h1, .hero h1 { font-weight: 700; letter-spacing: -0.03em; }
+.site-title { font-weight: 700; letter-spacing: -0.02em; }
+
+/* The build grid: a faint blueprint grid with two ambient emerald glows.
+   Fixed, so content scrolls over a stable floor. */
+:root[data-theme="dark"] body {
+  background-image:
+    linear-gradient(rgba(244, 250, 247, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(244, 250, 247, 0.035) 1px, transparent 1px),
+    radial-gradient(50% 38% at 10% 0%, rgba(16, 185, 129, 0.14), transparent 70%),
+    radial-gradient(45% 38% at 95% 100%, rgba(16, 185, 129, 0.08), transparent 70%);
+  background-size: 32px 32px, 32px 32px, 100% 100%, 100% 100%;
+  background-attachment: fixed;
+}
+:root[data-theme="dark"] .sidebar-pane,
+:root[data-theme="dark"] .main-frame {
+  background: transparent;
+}
+:root[data-theme="dark"] .sidebar-pane {
+  background: color-mix(in oklab, #0b1512, transparent 35%);
+}
+:root[data-theme="light"] body {
+  background-image:
+    linear-gradient(rgba(11, 21, 18, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(11, 21, 18, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px, 32px 32px;
+  background-attachment: fixed;
+}
+:root[data-theme="light"] .main-frame { background: transparent; }
+
+/* The header: translucent ink, blurred, hairline base. */
+.header {
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+:root[data-theme="dark"] .header {
+  background: color-mix(in oklab, #0b1512, transparent 22%);
+  border-bottom: 1px solid rgba(244, 250, 247, 0.08);
+}
+:root[data-theme="light"] .header {
+  background: color-mix(in oklab, #fbfdfc, transparent 18%);
+  border-bottom: 1px solid rgba(11, 21, 18, 0.08);
+}
+
+/* Hero: the emphasized phrase speaks mono, like the tool itself. */
+.hero .tagline em {
+  font-family: var(--sl-font-mono);
+  font-style: normal;
+  font-size: 0.85em;
+  color: var(--sl-color-accent-high);
+  background: color-mix(in oklab, var(--sl-color-accent-low), transparent 45%);
+  border: 1px solid color-mix(in oklab, var(--sl-color-accent), transparent 70%);
+  border-radius: 6px;
+  padding: 0.1em 0.45em;
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .hero .tagline em { white-space: normal; }
+}
+.hero h1 {
+  background: linear-gradient(120deg, var(--sl-color-white) 55%, var(--sl-color-accent-high));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Selection carries the accent. */
+::selection { background: #10b981; color: #06231a; }
+
+/* Cards: hairline emerald borders, gentle lift on hover. */
+.card {
+  border-radius: 12px;
+  border-color: color-mix(in oklab, var(--sl-color-gray-5), var(--sl-color-accent) 12%);
+  background: color-mix(in oklab, var(--sl-color-black), transparent 20%);
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+.card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in oklab, var(--sl-color-accent), transparent 45%);
+  box-shadow: 0 18px 48px -30px color-mix(in oklab, var(--sl-color-accent), transparent 40%);
+}
+.card .icon,
+.card .title .icon {
+  color: var(--sl-color-accent) !important;
+  background-color: var(--sl-color-accent-low) !important;
+  border-color: color-mix(in oklab, var(--sl-color-accent), transparent 55%) !important;
+  border-radius: 8px;
+}
+.sl-link-card {
+  border-radius: 12px;
+  transition: transform 160ms ease, border-color 160ms ease;
+}
+.sl-link-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in oklab, var(--sl-color-accent), transparent 45%);
+}
+
+/* Buttons: crisp radii, engineering not confetti. */
+.sl-link-button { border-radius: 10px; font-weight: 500; font-family: var(--vg-display); }
+.sl-link-button.primary { background: #10b981; border-color: #10b981; color: #06231a; }
+.sl-link-button.primary:hover { background: #34d399; border-color: #34d399; }
+
+/* Code: the tool's voice. Slightly inset blocks with a hairline. */
+.sl-markdown-content code:not(:where(pre code)) {
+  border-radius: 6px;
+  padding: 0.12em 0.4em;
+  background: color-mix(in oklab, var(--sl-color-accent-low), transparent 55%);
+  border: 1px solid color-mix(in oklab, var(--sl-color-accent), transparent 78%);
+  color: var(--sl-color-accent-high);
+}
+:root[data-theme="light"] .sl-markdown-content code:not(:where(pre code)) {
+  color: var(--sl-color-accent-high);
+}
+.expressive-code .frame,
+.sl-markdown-content pre {
+  border-radius: 12px;
+}
+
+/* Tables: quieter chrome, hairline rows. */
+.sl-markdown-content table {
+  border-radius: 10px;
+  overflow: hidden;
+}
+.sl-markdown-content th {
+  font-family: var(--vg-display);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  background: color-mix(in oklab, var(--sl-color-gray-6), transparent 20%);
+}
+
+/* Sidebar group labels speak mono, uppercase, tracked out. */
+#starlight__sidebar .large,
+nav[aria-labelledby] summary .large,
+.sidebar-content .top-level > li > details > summary .large,
+.sidebar-content .group-label .large {
+  font-family: var(--sl-font-mono);
+  font-size: 0.7rem;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--sl-color-gray-3);
+}
+.sidebar-content a { font-size: 0.92rem; border-radius: 8px; }
+.sidebar-content a[aria-current="page"] {
+  font-weight: 500;
+  background: color-mix(in oklab, var(--sl-color-accent-low), transparent 35%);
+  color: var(--sl-color-accent-high);
+}
+
+/* Content headings: anchored with a small emerald tick. */
+.sl-markdown-content h2 {
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  padding-top: 0.25rem;
+}
+.sl-markdown-content h2::before {
+  content: "";
+  display: inline-block;
+  width: 0.55em;
+  height: 0.14em;
+  margin-right: 0.45em;
+  margin-bottom: 0.18em;
+  border-radius: 2px;
+  background: var(--sl-color-accent);
+}
+
+/* Asides pick up the accent family. */
+.starlight-aside { border-radius: 10px; }
+
+/* Search modal follows the ink. */
+:root[data-theme="dark"] dialog[aria-label] { background: #0e1a15; }
