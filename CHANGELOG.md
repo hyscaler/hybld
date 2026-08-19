@@ -2,7 +2,7 @@
 
 All notable changes to the hybld packages are documented here. All packages version together (linked via Changesets); per-package changelogs are generated from 1.0.0 onward.
 
-## Unreleased (queued for 1.0.0-beta.3)
+## 1.0.0-beta.3 (2026-08-19)
 
 - Refuse `--clean` combined with a narrow build scope: a clean followed by a
   targeted build would have left the deployed site with only the scoped pages.
@@ -16,6 +16,8 @@ All notable changes to the hybld packages are documented here. All packages vers
   the end of each build instead of being retained while idle.
 - `prepublishOnly` build hooks on every package (a publish can never ship a
   stale dist); CI now tests Node 22 (the engines floor) alongside 24.
+- Repo: three clone-and-run starter examples (React + Vite, Next.js, Astro)
+  against a live public WordPress API, verified end to end.
 
 ## 1.0.0-beta.2 (2026-08-06)
 

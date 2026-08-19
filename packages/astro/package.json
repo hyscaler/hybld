@@ -1,6 +1,6 @@
 {
   "name": "@hybld/astro",
-  "version": "1.0.0-beta.2",
+  "version": "1.0.0-beta.3",
   "description": "Astro render backend and helpers for hybld (scoped build and merge)",
   "author": "HyScaler",
   "license": "MIT",

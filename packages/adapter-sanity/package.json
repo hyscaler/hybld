@@ -1,6 +1,6 @@
 {
   "name": "@hybld/adapter-sanity",
-  "version": "1.0.0-beta.2",
+  "version": "1.0.0-beta.3",
   "description": "Sanity (GROQ) adapter preset for hybld",
   "author": "HyScaler",
   "license": "MIT",
