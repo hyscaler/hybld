@@ -160,7 +160,7 @@ Every build has exactly one scope:
 | `--chunk-size N` | The next N never-built pages (resumable first builds). |
 | `--stale` | Pages rendered by an older version of your app code (see below). |
 
-Modifiers: `--force` (bypass hash skipping), `--dry-run` (list what would build), `--no-dependents`, `--fail-fast`, `--clean`, `--json`, `--wait` (queue behind a running build), `--concurrency N`.
+Modifiers: `--force` (bypass hash skipping), `--dry-run` (list what would build), `--no-dependents`, `--fail-fast`, `--clean` (only with `--all`), `--json`, `--wait` (queue behind a running build), `--concurrency N`. `hybld --version` prints the installed version.
 
 **Deletions**: adapters that can report them (WordPress with `trackDeletes`) handle deletions inside `--since`: page files removed, dependents rebuilt, sitemap/feed updated, slug changes become redirects. For CMSes that cannot, `hybld status --reconcile --prune` does a full ID sweep and removes orphans through the same pipeline.
 

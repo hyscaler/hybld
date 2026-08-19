@@ -36,6 +36,9 @@ Shared flags:
 | `--json` | Machine-readable summary on stdout. |
 | `--verbose` | Progress logging to stderr. |
 | `--config <path>` | Explicit config file. |
+| `--clean` | Empty the output directory first. Only allowed with `--all` (a clean plus a narrow scope would leave the site with only the scoped pages). |
+
+`hybld --version` (or `-v`) prints the installed version. Running on Node < 22.5 exits immediately with an upgrade message (`node:sqlite` requires 22.5+).
 
 Exit codes: `0` success, `1` fatal/config error, `2` completed with page failures.
 
