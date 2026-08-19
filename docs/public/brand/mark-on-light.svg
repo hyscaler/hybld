@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- hybld bare mark for light backgrounds -->
+  <rect x="8" y="7.6" width="15.4" height="4.6" rx="2.3" fill="#10201a" opacity="0.35"/>
+  <rect x="8" y="19.8" width="15.4" height="4.6" rx="2.3" fill="#10201a" opacity="0.35"/>
+  <rect x="10.4" y="13.7" width="15.4" height="4.6" rx="2.3" fill="#0f8a5f"/>
+</svg>
