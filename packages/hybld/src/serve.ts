@@ -196,7 +196,14 @@ export function startServer(builder: Builder, opts: ServeOptions): Server {
     // trigger a real build (a full framework build on delegated backends), so
     // unproductive routes are negative-cached and concurrency is capped.
     if (opts.regenOnMiss) {
-      const route = pathname.endsWith("/") ? pathname : `${pathname}/`;
+      // Decode so match() sees the real route (slugs with encoded characters).
+      let decodedPath = pathname;
+      try {
+        decodedPath = decodeURIComponent(pathname);
+      } catch {
+        /* keep raw; it will simply not match */
+      }
+      const route = decodedPath.endsWith("/") ? decodedPath : `${decodedPath}/`;
       const ref = !regenNegative.has(route) ? matchRoute(route) : null;
       if (ref && regenInFlight.size >= REGEN_MAX_INFLIGHT && !regenInFlight.has(route)) {
         res.writeHead(503, { "retry-after": "30", "content-type": "application/json" });
@@ -250,7 +257,18 @@ export function startServer(builder: Builder, opts: ServeOptions): Server {
   }
 
   function resolveFile(pathname: string): string | null {
-    const safe = normalize(pathname).replace(/^(\.\.[/\\])+/, "");
+    // Browsers percent-encode special characters in asset URLs (Next's App
+    // Router chunks live under literal "[slug]" directories, requested as
+    // "%5Bslug%5D"); decode BEFORE the traversal guard so encoded ".." (%2e)
+    // is neutralized by the same normalize/strip/prefix checks.
+    let decoded: string;
+    try {
+      decoded = decodeURIComponent(pathname);
+    } catch {
+      return null; // malformed percent-encoding
+    }
+    if (decoded.includes("\0")) return null;
+    const safe = normalize(decoded).replace(/^(\.\.[/\\])+/, "");
     const candidates = safe.endsWith("/")
       ? [join(outDir, safe, "index.html")]
       : [join(outDir, safe), join(outDir, safe, "index.html")];

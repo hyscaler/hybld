@@ -120,6 +120,35 @@ describe("sitemap and feed output hygiene", () => {
   });
 });
 
+describe("serve static: percent-encoded paths", () => {
+  it("serves files under bracket dirs (Next [slug] chunks) and still blocks encoded traversal", async () => {
+    const { startServer } = await import("../dist/serve.js");
+    const outDir = mkdtempSync(join(tmpdir(), "vg-serve-"));
+    mkdirSync(join(outDir, "chunks", "app", "[slug]"), { recursive: true });
+    writeFileSync(join(outDir, "chunks", "app", "[slug]", "page-abc.js"), "//chunk");
+    writeFileSync(join(outDir, "index.html"), "<h1>home</h1>");
+    const fakeBuilder: any = {
+      config: { outDir, pages: {} },
+      backendMode: "owned",
+      build: async () => ({ built: [], failed: [] }),
+    };
+    const server = startServer(fakeBuilder, { port: 0, serveStatic: true });
+    await new Promise((r) => server.once("listening", r));
+    const port = (server.address() as any).port;
+    const get = async (p: string) => (await fetch(`http://127.0.0.1:${port}${p}`)).status;
+
+    expect(await get("/index.html")).toBe(200);
+    // The bug: browsers request Next's [slug] chunk dirs percent-encoded.
+    expect(await get("/chunks/app/%5Bslug%5D/page-abc.js")).toBe(200);
+    // Encoded traversal must stay blocked (decode happens BEFORE the guard).
+    expect(await get("/%2e%2e/%2e%2e/etc/passwd")).toBe(404);
+    expect(await get("/chunks/%2e%2e/%2e%2e/%2e%2e/etc/passwd")).toBe(404);
+    // Malformed encoding: clean 404, not a crash.
+    expect(await get("/%zz")).toBe(404);
+    server.close();
+  });
+});
+
 describe("serve regen negative cache (BoundedTtlCache)", () => {
   it("expires entries after the TTL", async () => {
     const c = new BoundedTtlCache(30, 100);
