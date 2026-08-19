@@ -1,8 +1,25 @@
 # hybld
 
-Incremental and selective static builds for React + Vite, Next.js, and Astro projects backed by a headless CMS.
+Incremental and selective static builds for React + Vite, Next.js, and Astro projects backed by a headless CMS. Publish one article; rebuild one page and its listings, not the site.
 
-**Documentation is a Starlight site in [`docs/`](./docs/)**: getting started, concepts, configuration and CLI references, per-framework guides, adapters, deployment, the programmatic API, backend authoring, and troubleshooting. Run it locally with `cd docs && npm install && npm run dev`, or read the markdown sources directly in `docs/src/content/docs/`. Project history: `REQUIREMENTS.md` (engine spec) and `MULTI-FRAMEWORK-PLAN.md` (multi-framework architecture).
+**Documentation is a Starlight site in [`docs/`](./docs/)**: getting started, concepts, configuration and CLI references, per-framework guides, adapters, deployment, scaling to large catalogs, the programmatic API, backend authoring, and troubleshooting. Run it locally with `cd docs && npm install && npm run dev`, or read the markdown sources directly in `docs/src/content/docs/`. Project history: `REQUIREMENTS.md` (engine spec) and `MULTI-FRAMEWORK-PLAN.md` (multi-framework architecture).
+
+Requires Node >= 22.5 (uses the built-in `node:sqlite`) and pnpm.
+
+## Quickstart: run a starter against live data
+
+The fastest way to see hybld work is a starter: three clone-and-run apps under [`examples/`](./examples/) that use the **published hybld packages** and pull real articles from a live public WordPress API (WP Tavern). No API keys, no local CMS.
+
+```bash
+pnpm install
+cd examples/starter-react-vite     # or starter-next / starter-astro
+pnpm run demo     # builds 12 real articles + home, and seeds the incremental cursor
+pnpm run demo     # again: everything skips (nothing changed upstream)
+pnpm run sweep    # --since last-build: only what the CMS edited since
+pnpm run serve    # serve the output locally with regen-on-miss
+```
+
+Each starter's README explains the handful of files that make up the whole integration, and how to point `CMS_URL` at your own WordPress. See [`examples/README.md`](./examples/README.md) for the starters-vs-internal-demos split.
 
 ## Repo layout
 
@@ -15,15 +32,13 @@ Incremental and selective static builds for React + Vite, Next.js, and Astro pro
 | `packages/adapter-strapi` | Strapi v4/v5 preset. |
 | `packages/adapter-contentful` | Contentful Delivery API preset. |
 | `packages/adapter-sanity` | Sanity (GROQ) preset. |
-| `examples/starter-react-vite` | **Start here.** React + Vite starter against a LIVE public WordPress API (WP Tavern); `pnpm run demo` builds real articles in under a minute. |
+| `examples/starter-react-vite` | **Start here.** React + Vite starter on the published packages against a live public WordPress API. |
 | `examples/starter-next` | The same live-API starter on Next.js (App Router, static export). |
 | `examples/starter-astro` | The same live-API starter on Astro. |
-| `examples/demo-site` | React + Vite demo app plus the mock WordPress CMS used by the internal e2e demos. |
-| `examples/next-demo` | Next.js App Router (`output: "export"`) demo. |
-| `examples/nextpages-demo` | Next.js Pages Router demo (getStaticPaths/getStaticProps). |
-| `examples/astro-demo` | Astro demo. |
-
-Requires Node >= 22.5 (uses the built-in `node:sqlite`) and pnpm.
+| `examples/demo-site` | Internal e2e fixture: React + Vite on workspace code, plus the bundled mock WordPress CMS. |
+| `examples/next-demo` | Internal e2e fixture: Next.js App Router (`output: "export"`). |
+| `examples/nextpages-demo` | Internal e2e fixture: Next.js Pages Router (the only `_next/data` fan-out e2e). |
+| `examples/astro-demo` | Internal e2e fixture: Astro. |
 
 ## Two rendering strategies
 
@@ -31,18 +46,17 @@ Requires Node >= 22.5 (uses the built-in `node:sqlite`) and pnpm.
 
 **Delegated (next, astro)**: hybld computes what changed, writes the scope to `.hybld/scope.ndjson`, runs the framework's own build (whose dynamic routes read the scope through the helper packages), then merges the emitted pages and hashed assets into its cumulative output dir. Each incremental run costs one framework build (Astro ~1s, Next ~5s in the demos), still nothing like a full rebuild at scale. The framework owns head tags and its 404 page; draft previews are react-vite only; every batch carries all singleton pages plus at least one page per dynamic route type (Next's export refuses an empty `generateStaticParams`).
 
-Next backend requirements: `output: "export"`, `trailingSlash: true`, `serverExternalPackages: ["hybld", "@hybld/next", "jiti"]` in next.config, and a plain `.mjs` hybld config (it is also loaded inside Next build workers, where TypeScript configs cannot be imported). Sites served by a Next server should prefer Next's native ISR; this backend targets static hosting, where Next has no incremental story. See `examples/next-demo` and `examples/astro-demo` for complete working setups.
+Next backend requirements: `output: "export"`, `trailingSlash: true`, `serverExternalPackages: ["hybld", "@hybld/next", "jiti"]` in next.config, and a plain `.mjs` hybld config (it is also loaded inside Next build workers, where TypeScript configs cannot be imported). Sites served by a Next server should prefer Next's native ISR; this backend targets static hosting, where Next has no incremental story. See `examples/starter-next` and `examples/starter-astro` for complete working setups.
 
-## Setup
+## Developing hybld itself
 
 ```bash
 pnpm install
-pnpm run build          # compiles packages/hybld and packages/adapter-wordpress
+pnpm run build          # compile all packages (tests import from dist)
+pnpm test               # full suite
 ```
 
-## Try it on the demo site
-
-Terminal 1: start the mock CMS (57 seeded articles, WordPress-shaped REST API):
+The internal demos exercise the local workspace code against a deterministic mock CMS. Terminal 1: start the mock CMS (57 seeded articles, WordPress-shaped REST API):
 
 ```bash
 cd examples/demo-site
@@ -62,9 +76,6 @@ pnpm exec hybld build --all
 
 # Preview any scope without building
 pnpm exec hybld build --chunk 1/4 --dry-run
-
-# Serve the static output
-npx serve dist
 ```
 
 Publish a new article, then build only what changed:
@@ -89,7 +100,7 @@ pnpm exec hybld sync ../staging --delete --redirects netlify   # apply last buil
 pnpm exec hybld assets gc --dry-run                 # find superseded hashed bundles
 pnpm exec hybld manifest push --url <presigned-put-url>        # share the manifest via HTTP
 pnpm exec hybld status                              # page counts, code-stale count
-pnpm exec hybld status --reconcile                  # find articles deleted in the CMS
+pnpm exec hybld status --reconcile --prune          # remove articles deleted in the CMS
 pnpm exec vite build                                  # plugin mode: plain Vite build prerenders too
 ```
 
@@ -111,7 +122,9 @@ pnpm add -D hybld @hybld/adapter-wordpress
 1. Add the placeholders `<!--app-head-->` and `<!--app-html-->` to your `index.html`.
 2. Create `src/entry-server.tsx` default-exporting `({ route, pageType, data }) => ({ html, head })`.
 3. Hydrate in your client entry from `window.__HYBLD_DATA__`.
-4. Create `hybld.config.ts` (see `examples/demo-site/hybld.config.ts` for a complete example).
+4. Create `hybld.config.ts` (start from `examples/starter-react-vite/hybld.config.ts`, or `examples/demo-site/hybld.config.ts` for the full feature surface).
+
+Next.js and Astro projects follow the same shape through their helper packages; copy `examples/starter-next` or `examples/starter-astro` as a base.
 
 ## i18n pattern
 
@@ -120,8 +133,6 @@ functions (`route: (a) => '/' + a.lang + '/articles/' + a.slug + '/'`), filter
 or fan out per locale in your adapter/data loaders, and emit hreflang tags from
 your `entry-server` head. Each locale's pages are just more routes in the manifest.
 
-## Status
+## License
 
-Working v0.3 implementation. Build modes: full / limited / chunked / targeted / incremental (`--since`) / code-stale, with dry-run everywhere. Rendering: built-in prerenderer with per-page head metadata, worker-thread pool, Vite build reuse via source fingerprinting, per-page `data.json` (emitData), image localization from CMS origins. State: SQLite manifest with export/import/merge and HTTP push/pull, per-page dependents and feed entries, asset-graph tracking with `assets gc`. Output: atomic writes, sharded sitemap, RSS feed, slug-change redirects (plus Netlify/nginx emit via `sync`), changed-files report. Operations: build locking with queue coalescing, `serve` webhook/static server with ISR-style regen-on-miss, draft `preview` builds, deploy `sync`. Adapters: generic REST/GraphQL helpers plus WordPress, Strapi, Contentful, and Sanity presets, all with rate-limited access, retry/backoff, per-run memoization, and an opt-in cross-run disk cache (off by default: it trades freshness, use it for bulk full/chunked rebuilds, never for webhook-driven incremental sites). Experimental: Vite plugin mode (`hybld/plugin`). Tests: 44 across 10 Vitest files (`pnpm test` at the root).
-
-Known limitations: image localization rewrites and downloads but does not resize/optimize (needs a native imaging dependency), only one adapter-backed collection page type is supported (`pages.article`), the 1M-article scale benchmark has not been run, and nothing has been tested against a real (non-mock) CMS yet.
+MIT, see [LICENSE](./LICENSE). Every published package carries its own copy.
