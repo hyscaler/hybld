@@ -15,7 +15,10 @@ Incremental and selective static builds for React + Vite, Next.js, and Astro pro
 | `packages/adapter-strapi` | Strapi v4/v5 preset. |
 | `packages/adapter-contentful` | Contentful Delivery API preset. |
 | `packages/adapter-sanity` | Sanity (GROQ) preset. |
-| `examples/demo-site` | React + Vite demo app plus the mock WordPress CMS used by all demos. |
+| `examples/starter-react-vite` | **Start here.** React + Vite starter against a LIVE public WordPress API (WP Tavern); `pnpm run demo` builds real articles in under a minute. |
+| `examples/starter-next` | The same live-API starter on Next.js (App Router, static export). |
+| `examples/starter-astro` | The same live-API starter on Astro. |
+| `examples/demo-site` | React + Vite demo app plus the mock WordPress CMS used by the internal e2e demos. |
 | `examples/next-demo` | Next.js App Router (`output: "export"`) demo. |
 | `examples/nextpages-demo` | Next.js Pages Router demo (getStaticPaths/getStaticProps). |
 | `examples/astro-demo` | Astro demo. |

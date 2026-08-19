@@ -1,0 +1,22 @@
+{
+  "name": "starter-next",
+  "private": true,
+  "type": "module",
+  "version": "0.0.0",
+  "description": "hybld starter: Next.js App Router (static export) against a live public WordPress API (WP Tavern)",
+  "scripts": {
+    "demo": "hybld build --limit 12",
+    "sweep": "hybld build --since last-build || hybld build --since $(node -e \"console.log(new Date(Date.now()-7*86400000).toISOString())\")",
+    "serve": "hybld serve --static --regen"
+  },
+  "dependencies": {
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@hybld/adapter-wordpress": "workspace:*",
+    "@hybld/next": "workspace:*",
+    "hybld": "workspace:*"
+  }
+}

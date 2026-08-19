@@ -1,0 +1,43 @@
+---
+import { hybldPaths } from "@hybld/astro";
+
+export async function getStaticPaths() {
+  // Scoped during hybld runs (only the changed articles, data preloaded);
+  // full catalog on plain `astro build`. Data flows as props.
+  return hybldPaths("article", (data, job) => ({
+    params: { slug: job.slug },
+    props: { article: data },
+  }));
+}
+
+const { article } = Astro.props;
+const plainTitle = article.title.replace(/<[^>]+>/g, "");
+const description = article.excerpt?.replace(/<[^>]+>/g, "").trim().slice(0, 150);
+---
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>{plainTitle}</title>
+    <meta name="description" content={description} />
+    <style>
+      body { font: 16px/1.6 system-ui, sans-serif; max-width: 44rem; margin: 2rem auto; padding: 0 1rem; }
+      a { color: #0a6e5c; }
+      img { max-width: 100%; height: auto; }
+      .meta { color: #666; font-size: 0.875rem; }
+    </style>
+  </head>
+  <body>
+    <article>
+      <p><a href="/">&larr; All articles</a></p>
+      <h1 set:html={article.title} />
+      <p class="meta">
+        <time datetime={article.date}>{article.date.slice(0, 10)}</time>
+        {" · "}
+        <a href={article.sourceUrl} rel="noopener">original at WP Tavern</a>
+      </p>
+      <div set:html={article.html} />
+    </article>
+  </body>
+</html>

@@ -1,0 +1,31 @@
+---
+import { hybldData } from "@hybld/astro";
+// Singleton data: rides in every hybld scope file; falls back to the CMS
+// on plain `astro build` / `astro dev`.
+const { latest } = await hybldData("home");
+---
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>hybld starter: Astro</title>
+    <style>
+      body { font: 16px/1.6 system-ui, sans-serif; max-width: 44rem; margin: 2rem auto; padding: 0 1rem; }
+      a { color: #0a6e5c; }
+      .meta { color: #666; font-size: 0.875rem; }
+    </style>
+  </head>
+  <body>
+    <h1>hybld starter: Astro</h1>
+    <p class="meta">Latest articles from a live public WordPress, each prerendered as its own static page.</p>
+    <ul>
+      {latest.map((a: any) => (
+        <li>
+          <a href={`/articles/${a.slug}/`} set:html={a.title} />{" "}
+          <span class="meta">({a.date.slice(0, 10)})</span>
+        </li>
+      ))}
+    </ul>
+  </body>
+</html>

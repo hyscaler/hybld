@@ -1,0 +1,23 @@
+{
+  "name": "starter-react-vite",
+  "private": true,
+  "type": "module",
+  "version": "0.0.0",
+  "description": "hybld starter: plain React + Vite against a live public WordPress API (WP Tavern)",
+  "scripts": {
+    "demo": "hybld build --limit 12",
+    "sweep": "hybld build --since last-build || hybld build --since $(node -e \"console.log(new Date(Date.now()-7*86400000).toISOString())\")",
+    "serve": "hybld serve --static --regen",
+    "dev": "vite"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@hybld/adapter-wordpress": "workspace:*",
+    "@vitejs/plugin-react": "^4.3.0",
+    "hybld": "workspace:*",
+    "vite": "^6.0.0"
+  }
+}

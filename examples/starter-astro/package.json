@@ -1,0 +1,19 @@
+{
+  "name": "starter-astro",
+  "private": true,
+  "type": "module",
+  "version": "0.0.0",
+  "description": "hybld starter: Astro against a live public WordPress API (WP Tavern)",
+  "scripts": {
+    "demo": "hybld build --limit 12",
+    "sweep": "hybld build --since last-build || hybld build --since $(node -e \"console.log(new Date(Date.now()-7*86400000).toISOString())\")",
+    "serve": "hybld serve --static --regen"
+  },
+  "devDependencies": {
+    "@hybld/adapter-wordpress": "workspace:*",
+    "@hybld/astro": "workspace:*",
+    "astro": "^5.0.0",
+    "hybld": "workspace:*",
+    "typescript": "^5.6.0"
+  }
+}
