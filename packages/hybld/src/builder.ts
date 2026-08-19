@@ -528,6 +528,11 @@ export class Builder {
     } finally {
       this.manifest.rollback(); // no-op after a successful commit
       this.lock.release();
+      // Release the run's memoized CMS responses. Clearing only at the START
+      // of the next run would leave a long-lived process (serve mode) holding
+      // the entire last catalog sweep in memory while idle.
+      (this.config.adapter as any).fetcher?.clearMemo?.();
+      for (const [, c] of this.collections()) (c.adapter as any)?.fetcher?.clearMemo?.();
     }
   }
 

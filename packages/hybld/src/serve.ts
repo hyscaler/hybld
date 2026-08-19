@@ -48,6 +48,54 @@ const MAX_BODY_BYTES = 1_048_576;
 const REGEN_NEGATIVE_TTL_MS = 60_000;
 /** Max distinct routes allowed to regenerate concurrently. */
 const REGEN_MAX_INFLIGHT = 8;
+/** Max routes remembered in the regen negative cache (bounds memory under junk-URL floods). */
+const REGEN_NEGATIVE_MAX = 10_000;
+
+/**
+ * TTL cache with a hard size bound. Entries expire on read after ttlMs; when
+ * a set would exceed maxSize, the oldest entries are evicted. Without the
+ * bound, a crawler spraying distinct pattern-matching URLs at a weeks-old
+ * `serve --regen` process would grow the negative cache without limit.
+ */
+export class BoundedTtlCache {
+  private entries = new Map<string, number>();
+
+  constructor(
+    private ttlMs: number,
+    private maxSize: number
+  ) {}
+
+  get size(): number {
+    return this.entries.size;
+  }
+
+  has(key: string): boolean {
+    const at = this.entries.get(key);
+    if (at === undefined) return false;
+    if (Date.now() - at > this.ttlMs) {
+      this.entries.delete(key);
+      return false;
+    }
+    return true;
+  }
+
+  add(key: string): void {
+    // Delete-then-set keeps Map insertion order equal to recency order, so
+    // eviction below always removes the stalest entries first.
+    this.entries.delete(key);
+    this.entries.set(key, Date.now());
+    if (this.entries.size <= this.maxSize) return;
+    const now = Date.now();
+    for (const [k, at] of this.entries) {
+      if (this.entries.size <= this.maxSize) break;
+      if (now - at > this.ttlMs) this.entries.delete(k);
+    }
+    while (this.entries.size > this.maxSize) {
+      const oldest = this.entries.keys().next().value as string;
+      this.entries.delete(oldest);
+    }
+  }
+}
 
 function secretMatches(provided: unknown, secret: string): boolean {
   if (typeof provided !== "string") return false;
@@ -79,16 +127,9 @@ export function startServer(builder: Builder, opts: ServeOptions): Server {
   }
   const outDir = builder.config.outDir;
   const regenInFlight = new Set<string>();
-  const regenNegative = new Map<string, number>(); // route -> when it last produced nothing
-  const regenBlocked = (route: string): boolean => {
-    const at = regenNegative.get(route);
-    if (at === undefined) return false;
-    if (Date.now() - at > REGEN_NEGATIVE_TTL_MS) {
-      regenNegative.delete(route);
-      return false;
-    }
-    return true;
-  };
+  // Routes whose regen produced nothing recently (size-bounded: junk-URL
+  // floods must not grow a long-lived process without limit).
+  const regenNegative = new BoundedTtlCache(REGEN_NEGATIVE_TTL_MS, REGEN_NEGATIVE_MAX);
   const matchRoute = (route: string): ArticleRef | null => {
     for (const page of Object.values(builder.config.pages)) {
       const m = (page as CollectionPageConfig | undefined)?.match?.(route);
@@ -156,7 +197,7 @@ export function startServer(builder: Builder, opts: ServeOptions): Server {
     // unproductive routes are negative-cached and concurrency is capped.
     if (opts.regenOnMiss) {
       const route = pathname.endsWith("/") ? pathname : `${pathname}/`;
-      const ref = !regenBlocked(route) ? matchRoute(route) : null;
+      const ref = !regenNegative.has(route) ? matchRoute(route) : null;
       if (ref && regenInFlight.size >= REGEN_MAX_INFLIGHT && !regenInFlight.has(route)) {
         res.writeHead(503, { "retry-after": "30", "content-type": "application/json" });
         res.end(JSON.stringify({ status: "busy", route, retryAfterSeconds: 30 }));
@@ -173,10 +214,10 @@ export function startServer(builder: Builder, opts: ServeOptions): Server {
               .build({ routes: [route] })
               .then(
                 (summary) => {
-                  if (summary.built.length === 0) regenNegative.set(route, Date.now());
+                  if (summary.built.length === 0) regenNegative.add(route);
                 },
                 (err) => {
-                  regenNegative.set(route, Date.now());
+                  regenNegative.add(route);
                   log(`regen failed for ${route}: ${err?.message ?? err}`);
                 }
               )
@@ -195,7 +236,7 @@ export function startServer(builder: Builder, opts: ServeOptions): Server {
         }
         const rebuilt = resolveFile(pathname);
         if (rebuilt) return sendFile(res, rebuilt);
-        regenNegative.set(route, Date.now());
+        regenNegative.add(route);
       }
     }
 

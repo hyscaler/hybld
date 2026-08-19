@@ -16,6 +16,7 @@ import {
   type CmsAdapter,
 } from "../dist/index.js";
 import { writeSitemap } from "../dist/sitemap.js";
+import { BoundedTtlCache } from "../dist/serve.js";
 
 describe("output path safety (CMS-controlled slugs)", () => {
   it("rejects routes with .. or . segments", () => {
@@ -116,6 +117,38 @@ describe("sitemap and feed output hygiene", () => {
     const xml = readFileSync(join(dir, "feed.xml"), "utf8");
     expect(xml).not.toContain("Invalid Date");
     expect(xml).toContain("<pubDate>"); // fell back to builtAt
+  });
+});
+
+describe("serve regen negative cache (BoundedTtlCache)", () => {
+  it("expires entries after the TTL", async () => {
+    const c = new BoundedTtlCache(30, 100);
+    c.add("/a/");
+    expect(c.has("/a/")).toBe(true);
+    await new Promise((r) => setTimeout(r, 45));
+    expect(c.has("/a/")).toBe(false);
+    expect(c.size).toBe(0);
+  });
+
+  it("caps its size by evicting the stalest entries (junk-URL flood safety)", () => {
+    const c = new BoundedTtlCache(60_000, 3);
+    c.add("/a/");
+    c.add("/b/");
+    c.add("/c/");
+    c.add("/d/");                    // over cap: /a/ (oldest) evicted
+    expect(c.size).toBe(3);
+    expect(c.has("/a/")).toBe(false);
+    expect(c.has("/b/") && c.has("/c/") && c.has("/d/")).toBe(true);
+
+    c.add("/b/");                    // refresh recency of /b/
+    c.add("/e/");                    // now /c/ is the stalest
+    expect(c.size).toBe(3);
+    expect(c.has("/c/")).toBe(false);
+    expect(c.has("/b/") && c.has("/d/") && c.has("/e/")).toBe(true);
+
+    // a sustained flood never exceeds the cap
+    for (let i = 0; i < 500; i++) c.add(`/junk-${i}/`);
+    expect(c.size).toBe(3);
   });
 });
 
@@ -248,6 +281,20 @@ for (const line of lines) {
     const b = makeBuilder(stuck, "stuck");
     await expect(b.build({ all: true, dryRun: true })).rejects.toThrow(/identical consecutive pages/);
     await b.close();
+  });
+
+  it("releases the fetcher memo at the END of a run, not just the start (serve-mode idle memory)", async () => {
+    let clears = 0;
+    const adapter: any = uuidAdapter([{ id: "1", slug: "m", title: "m" }]);
+    adapter.fetcher = Object.assign(async () => new Response("{}"), {
+      clearMemo: () => clears++,
+      requestCount: () => 0,
+    });
+    const b = makeBuilder(adapter, "memoclear");
+    await b.build({ all: true, dryRun: true });
+    await b.close();
+    // once at run start, once in the run's finally
+    expect(clears).toBe(2);
   });
 
   it("refuses --clean with a narrow scope (it would wipe the site down to the scoped pages)", async () => {
