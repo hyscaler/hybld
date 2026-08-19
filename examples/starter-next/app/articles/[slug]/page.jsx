@@ -1,4 +1,5 @@
 import { hybldParams, hybldData } from "@hybld/next";
+import { ProgressBar, TimeAgo, ClapButton } from "../../components/ArticleExtras";
 
 export const dynamicParams = false;
 
@@ -23,14 +24,21 @@ export default async function ArticlePage({ params }) {
   const a = await hybldData("article", { slug }); // scope-first: zero CMS calls during hybld runs
   return (
     <article>
-      <p><a href="/">&larr; All articles</a></p>
-      <h1 dangerouslySetInnerHTML={{ __html: a.title }} />
-      <p style={{ color: "#666", fontSize: "0.875rem" }}>
-        <time dateTime={a.date}>{a.date.slice(0, 10)}</time>
-        {" · "}
-        <a href={a.sourceUrl} rel="noopener">original at WP Tavern</a>
-      </p>
-      <div dangerouslySetInnerHTML={{ __html: a.html }} />
+      <ProgressBar />
+      <a className="crumb" href="/">&larr; All articles</a>
+      <h1 className="article-title" dangerouslySetInnerHTML={{ __html: a.title }} />
+      <div className="article-meta">
+        <span className="badge">Article</span>
+        <span>
+          <time dateTime={a.date}>
+            <TimeAgo iso={a.date} />
+          </time>
+        </span>
+        <a href={a.sourceUrl} rel="noopener">original source</a>
+      </div>
+      {a.image ? <img className="hero" src={a.image} alt="" /> : null}
+      <div className="prose" dangerouslySetInnerHTML={{ __html: a.html }} />
+      <ClapButton slug={slug} />
     </article>
   );
 }

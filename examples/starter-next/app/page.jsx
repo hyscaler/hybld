@@ -1,4 +1,5 @@
 import { hybldData } from "@hybld/next";
+import { FilterableList } from "./components/FilterableList";
 
 export default async function Home() {
   // Singleton data: rides in every hybld scope file; falls back to the CMS
@@ -6,18 +7,12 @@ export default async function Home() {
   const { latest } = await hybldData("home");
   return (
     <>
-      <h1>hybld starter: Next.js</h1>
-      <p style={{ color: "#666" }}>
-        Latest articles from a live public WordPress, each exported as its own static page.
+      <h1 className="page-title">Latest articles</h1>
+      <p className="page-sub">
+        Pulled from a live API and prerendered as static pages, one page per article, rebuilt only
+        when it changes. The filter below runs client-side: hydration proof.
       </p>
-      <ul>
-        {latest.map((a) => (
-          <li key={a.slug}>
-            <a href={`/articles/${a.slug}/`} dangerouslySetInnerHTML={{ __html: a.title }} />{" "}
-            <span style={{ color: "#666", fontSize: "0.875rem" }}>({a.date.slice(0, 10)})</span>
-          </li>
-        ))}
-      </ul>
+      <FilterableList items={latest} />
     </>
   );
 }
