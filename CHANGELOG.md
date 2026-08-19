@@ -2,6 +2,22 @@
 
 All notable changes to the hybld packages are documented here. All packages version together (linked via Changesets); per-package changelogs are generated from 1.0.0 onward.
 
+## 1.0.0 (2026-08-19)
+
+First stable release. Validated end to end against two live production
+APIs (a public WordPress REST site and a custom GraphQL news API)
+through the published packages, across all three frameworks.
+
+- serve: percent-encoded request paths are now decoded before file
+  resolution, so Next App Router per-route chunks (emitted under literal
+  [slug] directories and requested URL-encoded by browsers) load
+  correctly under `hybld serve`; encoded traversal attempts remain
+  blocked by the same guard, and malformed encodings 404 cleanly.
+- starter-next: real UI with client-side interactivity (reading-progress
+  bar, relative timestamps, localStorage clap button, client-side list
+  filter) that doubles as visible hydration proof on incrementally
+  built pages.
+
 ## 1.0.0-beta.3 (2026-08-19)
 
 - Refuse `--clean` combined with a narrow build scope: a clean followed by a
