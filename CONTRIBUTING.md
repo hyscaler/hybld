@@ -27,9 +27,22 @@ pnpm test          # builds, then runs all test suites
 
 ## Releasing (maintainers)
 
+All seven packages version together. The flow used for every release so far:
+
+1. Set the same new version in every `packages/*/package.json`.
+2. Add a dated section to `CHANGELOG.md` describing the release.
+3. `pnpm install` (refresh lockfile), then `pnpm run build && pnpm test`.
+4. If pnpm's release-age policy complains after publish, add the fresh
+   `<pkg>@<version>` entries to `minimumReleaseAgeExclude` in
+   `pnpm-workspace.yaml` so the repo can install its own new release.
+5. Publish (needs npm 2FA; a `404` on the publish PUT means the npm
+   token expired, run `npm login` first):
+
 ```bash
-pnpm changeset version   # applies pending changesets, bumps versions, writes changelogs
-pnpm install             # refresh lockfile
-pnpm run build && pnpm test
-pnpm -r publish --access public
+pnpm -r publish --access public --publish-branch development
 ```
+
+`latest` moves automatically on a stable publish; prereleases add
+`--tag beta`. Tag the release (`git tag vX.Y.Z && git push origin vX.Y.Z`).
+Changesets is configured (`pnpm changeset`) as an optional alternative
+for accumulating change notes between releases.
