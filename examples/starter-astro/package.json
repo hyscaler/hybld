@@ -10,10 +10,10 @@
     "serve": "hybld serve --static --regen"
   },
   "devDependencies": {
-    "@hybld/adapter-wordpress": "workspace:*",
-    "@hybld/astro": "workspace:*",
+    "@hybld/adapter-wordpress": "^1.0.0-beta.3",
+    "@hybld/astro": "^1.0.0-beta.3",
     "astro": "^5.0.0",
-    "hybld": "workspace:*",
+    "hybld": "^1.0.0-beta.3",
     "typescript": "^5.6.0"
   }
 }

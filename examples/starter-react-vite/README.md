@@ -7,7 +7,7 @@ watch incremental static generation work against live data in under a minute.
 ## Run it
 
 ```bash
-pnpm install          # from the repo root
+npm install           # or pnpm install; deps are the published hybld packages
 pnpm run demo         # builds 12 articles + home into dist/, and seeds the incremental cursor
 pnpm run demo         # again: everything skips (nothing changed upstream)
 pnpm run sweep        # --since last-build: builds only what WP Tavern edited since

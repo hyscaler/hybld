@@ -8,7 +8,7 @@ merges the result into the cumulative `site/` directory.
 ## Run it
 
 ```bash
-pnpm install          # from the repo root
+npm install           # or pnpm install; deps are the published hybld packages
 pnpm run demo         # one scoped next build: 12 articles + home into site/ (seeds the cursor)
 pnpm run demo         # again: everything skips, no next build at all
 pnpm run sweep        # --since last-build: only what WP Tavern edited since

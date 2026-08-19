@@ -15,8 +15,8 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@hybld/adapter-wordpress": "workspace:*",
-    "@hybld/next": "workspace:*",
-    "hybld": "workspace:*"
+    "@hybld/adapter-wordpress": "^1.0.0-beta.3",
+    "@hybld/next": "^1.0.0-beta.3",
+    "hybld": "^1.0.0-beta.3"
   }
 }

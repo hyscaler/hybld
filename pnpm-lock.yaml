@@ -112,17 +112,17 @@ importers:
   examples/starter-astro:
     devDependencies:
       '@hybld/adapter-wordpress':
-        specifier: workspace:*
-        version: link:../../packages/adapter-wordpress
+        specifier: ^1.0.0-beta.3
+        version: 1.0.0-beta.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))
       '@hybld/astro':
-        specifier: workspace:*
-        version: link:../../packages/astro
+        specifier: ^1.0.0-beta.3
+        version: 1.0.0-beta.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))
       astro:
         specifier: ^5.0.0
         version: 5.18.2(@types/node@24.13.3)(jiti@2.7.0)(rollup@4.62.2)(typescript@5.9.3)
       hybld:
-        specifier: workspace:*
-        version: link:../../packages/hybld
+        specifier: ^1.0.0-beta.3
+        version: 1.0.0-beta.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))
       typescript:
         specifier: ^5.6.0
         version: 5.9.3
@@ -140,14 +140,14 @@ importers:
         version: 19.2.7(react@19.2.7)
     devDependencies:
       '@hybld/adapter-wordpress':
-        specifier: workspace:*
-        version: link:../../packages/adapter-wordpress
+        specifier: ^1.0.0-beta.3
+        version: 1.0.0-beta.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))
       '@hybld/next':
-        specifier: workspace:*
-        version: link:../../packages/next
+        specifier: ^1.0.0-beta.3
+        version: 1.0.0-beta.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))
       hybld:
-        specifier: workspace:*
-        version: link:../../packages/hybld
+        specifier: ^1.0.0-beta.3
+        version: 1.0.0-beta.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))
 
   examples/starter-react-vite:
     dependencies:
@@ -159,14 +159,14 @@ importers:
         version: 19.2.7(react@19.2.7)
     devDependencies:
       '@hybld/adapter-wordpress':
-        specifier: workspace:*
-        version: link:../../packages/adapter-wordpress
+        specifier: ^1.0.0-beta.3
+        version: 1.0.0-beta.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))
       '@vitejs/plugin-react':
         specifier: ^4.3.0
         version: 4.7.0(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))
       hybld:
-        specifier: workspace:*
-        version: link:../../packages/hybld
+        specifier: ^1.0.0-beta.3
+        version: 1.0.0-beta.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))
       vite:
         specifier: ^6.0.0
         version: 6.4.3(@types/node@24.13.3)(jiti@2.7.0)
@@ -762,6 +762,18 @@ packages:
     engines: {node: '>=18'}
     cpu: [x64]
     os: [win32]
+
+  '@hybld/adapter-wordpress@1.0.0-beta.3':
+    resolution: {integrity: sha512-vBy/RNLT6oI5MAtE88n9DiYDTErWIc0892Z+wwpvONPu8TjB3MQBbnTpvhKrYih1051xIZky3NYs85BPxD/mDQ==}
+    engines: {node: '>=22.5.0'}
+
+  '@hybld/astro@1.0.0-beta.3':
+    resolution: {integrity: sha512-EtHLrVBsGVlJI1GbdJa8DfCYVGBSCC9PGxc9Y3Va8mTSDmsrtTCqnovQch9+o9q8oSGu4MmqYUp+Telw0fbeQA==}
+    engines: {node: '>=22.5.0'}
+
+  '@hybld/next@1.0.0-beta.3':
+    resolution: {integrity: sha512-IEnbRyp6r9hdw0l08kTh4EK0Rr2eywAEqj60RSeAr0uA08ZU6mqLXZcKHWd343rvJ0R3yuhIdrhTtQCCl3jQmQ==}
+    engines: {node: '>=22.5.0'}
 
   '@img/colour@1.1.0':
     resolution: {integrity: sha512-Td76q7j57o/tLVdgS746cYARfSyxk8iEfRxewL9h4OMzYhbW4TAcppl0mT4eyqXddh6L/jwoM75mo7ixa/pCeQ==}
@@ -1738,6 +1750,15 @@ packages:
   human-id@4.2.0:
     resolution: {integrity: sha512-K3GbkIWqyvvlpfhBPlbEvD97TtqBpAYA4kt+cn2lD2x2HuohzZCibcA2nOlnJT6exqvJLggoB5nv2dNf192nEA==}
     hasBin: true
+
+  hybld@1.0.0-beta.3:
+    resolution: {integrity: sha512-mGM3qAtE4lgfNhtjsOtZDQjd7gtQ3r+2NvKAfhlhoskN9Q/VIi7G9/en/toUryAe+IuI38xPwsFGWBZDxkllEw==}
+    engines: {node: '>=22.5.0'}
+    hasBin: true
+    peerDependencies:
+      react: '>=18'
+      react-dom: '>=18'
+      vite: '>=5'
 
   iconv-lite@0.7.3:
     resolution: {integrity: sha512-IKXpvIzjnC9XTAUbVBcMfGS0EPaIXtW6v+zr+RRp+hqULEpo0owZax6wyRwPOJbWbzjYspQwusTsfVr0ifh4uQ==}
@@ -3213,6 +3234,30 @@ snapshots:
   '@esbuild/win32-x64@0.27.7':
     optional: true
 
+  '@hybld/adapter-wordpress@1.0.0-beta.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))':
+    dependencies:
+      hybld: 1.0.0-beta.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))
+    transitivePeerDependencies:
+      - react
+      - react-dom
+      - vite
+
+  '@hybld/astro@1.0.0-beta.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))':
+    dependencies:
+      hybld: 1.0.0-beta.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))
+    transitivePeerDependencies:
+      - react
+      - react-dom
+      - vite
+
+  '@hybld/next@1.0.0-beta.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))':
+    dependencies:
+      hybld: 1.0.0-beta.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))
+    transitivePeerDependencies:
+      - react
+      - react-dom
+      - vite
+
   '@img/colour@1.1.0':
     optional: true
 
@@ -4230,6 +4275,13 @@ snapshots:
   http-cache-semantics@4.2.0: {}
 
   human-id@4.2.0: {}
+
+  hybld@1.0.0-beta.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0)):
+    dependencies:
+      jiti: 2.7.0
+      react: 19.2.7
+      react-dom: 19.2.7(react@19.2.7)
+      vite: 6.4.3(@types/node@24.13.3)(jiti@2.7.0)
 
   iconv-lite@0.7.3:
     dependencies:
