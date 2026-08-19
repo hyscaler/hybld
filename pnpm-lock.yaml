@@ -112,17 +112,17 @@ importers:
   examples/starter-astro:
     devDependencies:
       '@hybld/adapter-wordpress':
-        specifier: ^1.0.0-beta.3
-        version: 1.0.0-beta.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))
+        specifier: ^1.0.0
+        version: 1.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))
       '@hybld/astro':
-        specifier: ^1.0.0-beta.3
-        version: 1.0.0-beta.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))
+        specifier: ^1.0.0
+        version: 1.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))
       astro:
         specifier: ^5.0.0
         version: 5.18.2(@types/node@24.13.3)(jiti@2.7.0)(rollup@4.62.2)(typescript@5.9.3)
       hybld:
-        specifier: ^1.0.0-beta.3
-        version: 1.0.0-beta.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))
+        specifier: ^1.0.0
+        version: 1.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))
       typescript:
         specifier: ^5.6.0
         version: 5.9.3
@@ -140,14 +140,14 @@ importers:
         version: 19.2.7(react@19.2.7)
     devDependencies:
       '@hybld/adapter-wordpress':
-        specifier: ^1.0.0-beta.3
-        version: 1.0.0-beta.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))
+        specifier: ^1.0.0
+        version: 1.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))
       '@hybld/next':
-        specifier: ^1.0.0-beta.3
-        version: 1.0.0-beta.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))
+        specifier: ^1.0.0
+        version: 1.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))
       hybld:
-        specifier: ^1.0.0-beta.3
-        version: 1.0.0-beta.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))
+        specifier: ^1.0.0
+        version: 1.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))
 
   examples/starter-react-vite:
     dependencies:
@@ -159,14 +159,14 @@ importers:
         version: 19.2.7(react@19.2.7)
     devDependencies:
       '@hybld/adapter-wordpress':
-        specifier: ^1.0.0-beta.3
-        version: 1.0.0-beta.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))
+        specifier: ^1.0.0
+        version: 1.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))
       '@vitejs/plugin-react':
         specifier: ^4.3.0
         version: 4.7.0(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))
       hybld:
-        specifier: ^1.0.0-beta.3
-        version: 1.0.0-beta.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))
+        specifier: ^1.0.0
+        version: 1.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))
       vite:
         specifier: ^6.0.0
         version: 6.4.3(@types/node@24.13.3)(jiti@2.7.0)
@@ -763,16 +763,16 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@hybld/adapter-wordpress@1.0.0-beta.3':
-    resolution: {integrity: sha512-vBy/RNLT6oI5MAtE88n9DiYDTErWIc0892Z+wwpvONPu8TjB3MQBbnTpvhKrYih1051xIZky3NYs85BPxD/mDQ==}
+  '@hybld/adapter-wordpress@1.0.0':
+    resolution: {integrity: sha512-2geOU+WiV2JAqypetdKR1/tBEA8zx86Uh7qt2DTJUjuKZaNyr2vYN8tqVdGdmn2sEMOdBe4n+NPlr7nHNoOoLA==}
     engines: {node: '>=22.5.0'}
 
-  '@hybld/astro@1.0.0-beta.3':
-    resolution: {integrity: sha512-EtHLrVBsGVlJI1GbdJa8DfCYVGBSCC9PGxc9Y3Va8mTSDmsrtTCqnovQch9+o9q8oSGu4MmqYUp+Telw0fbeQA==}
+  '@hybld/astro@1.0.0':
+    resolution: {integrity: sha512-Bo3FEHzZBlNngxC3JWsL0InhLav28jsdn13xuPuRBlulmY+0lI5jKTVjeczq95+rr0wjrnrvTMLNXo1zHuhGQQ==}
     engines: {node: '>=22.5.0'}
 
-  '@hybld/next@1.0.0-beta.3':
-    resolution: {integrity: sha512-IEnbRyp6r9hdw0l08kTh4EK0Rr2eywAEqj60RSeAr0uA08ZU6mqLXZcKHWd343rvJ0R3yuhIdrhTtQCCl3jQmQ==}
+  '@hybld/next@1.0.0':
+    resolution: {integrity: sha512-QJcMsBex3gzhjg8sXULQV7EOvS/IOsw1eITj2qBN9o+GAXsOn9mTIv6S4rDIkyeUtz7xC6+vA7GDZa9d608pmA==}
     engines: {node: '>=22.5.0'}
 
   '@img/colour@1.1.0':
@@ -1751,8 +1751,8 @@ packages:
     resolution: {integrity: sha512-K3GbkIWqyvvlpfhBPlbEvD97TtqBpAYA4kt+cn2lD2x2HuohzZCibcA2nOlnJT6exqvJLggoB5nv2dNf192nEA==}
     hasBin: true
 
-  hybld@1.0.0-beta.3:
-    resolution: {integrity: sha512-mGM3qAtE4lgfNhtjsOtZDQjd7gtQ3r+2NvKAfhlhoskN9Q/VIi7G9/en/toUryAe+IuI38xPwsFGWBZDxkllEw==}
+  hybld@1.0.0:
+    resolution: {integrity: sha512-q7BJc07TPazqpVxvqbEjplLG7uLywIVco6cmUAf3LiyoedH0YKWRKyKaoC7n06v/rHcpsT1BCwFDKlQIzXSm2w==}
     engines: {node: '>=22.5.0'}
     hasBin: true
     peerDependencies:
@@ -3234,25 +3234,25 @@ snapshots:
   '@esbuild/win32-x64@0.27.7':
     optional: true
 
-  '@hybld/adapter-wordpress@1.0.0-beta.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))':
+  '@hybld/adapter-wordpress@1.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))':
     dependencies:
-      hybld: 1.0.0-beta.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))
+      hybld: 1.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))
     transitivePeerDependencies:
       - react
       - react-dom
       - vite
 
-  '@hybld/astro@1.0.0-beta.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))':
+  '@hybld/astro@1.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))':
     dependencies:
-      hybld: 1.0.0-beta.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))
+      hybld: 1.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))
     transitivePeerDependencies:
       - react
       - react-dom
       - vite
 
-  '@hybld/next@1.0.0-beta.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))':
+  '@hybld/next@1.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))':
     dependencies:
-      hybld: 1.0.0-beta.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))
+      hybld: 1.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0))
     transitivePeerDependencies:
       - react
       - react-dom
@@ -4276,7 +4276,7 @@ snapshots:
 
   human-id@4.2.0: {}
 
-  hybld@1.0.0-beta.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0)):
+  hybld@1.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0)):
     dependencies:
       jiti: 2.7.0
       react: 19.2.7
