@@ -5,8 +5,8 @@
   "version": "0.0.0",
   "description": "hybld starter: Astro against a live public WordPress API (WP Tavern)",
   "scripts": {
-    "demo": "hybld build --limit 12",
-    "sweep": "hybld build --since last-build || hybld build --since $(node -e \"console.log(new Date(Date.now()-7*86400000).toISOString())\")",
+    "demo": "hybld build --limit 12 && hybld build --since $(node -e \"console.log(new Date(Date.now()-7*86400000).toISOString())\")",
+    "sweep": "hybld build --since last-build",
     "serve": "hybld serve --static --regen"
   },
   "devDependencies": {

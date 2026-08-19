@@ -9,7 +9,7 @@ covering only the changed pages and merges the result into the cumulative
 
 ```bash
 pnpm install          # from the repo root
-pnpm run demo         # one scoped astro build: 12 articles + home into site/
+pnpm run demo         # one scoped astro build: 12 articles + home into site/ (seeds the cursor)
 pnpm run demo         # again: everything skips, no astro build at all
 pnpm run sweep        # --since last-build: only what WP Tavern edited since
 pnpm run serve        # serve site/ locally (regen answers 503 + Retry-After here)

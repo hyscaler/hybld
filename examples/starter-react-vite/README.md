@@ -8,7 +8,7 @@ watch incremental static generation work against live data in under a minute.
 
 ```bash
 pnpm install          # from the repo root
-pnpm run demo         # builds 12 articles + the home page into dist/
+pnpm run demo         # builds 12 articles + home into dist/, and seeds the incremental cursor
 pnpm run demo         # again: everything skips (nothing changed upstream)
 pnpm run sweep        # --since last-build: builds only what WP Tavern edited since
 pnpm run serve        # serve dist/ locally with regen-on-miss
