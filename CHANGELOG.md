@@ -2,7 +2,7 @@
 
 All notable changes to the hybld packages are documented here. All packages version together (linked via Changesets); per-package changelogs are generated from 1.0.0 onward.
 
-## Unreleased
+## 1.0.1 (2026-09-16)
 
 - http: the requestsPerSecond throttle now paces concurrent requests
   correctly. In-flight requests used to sleep against the same stale

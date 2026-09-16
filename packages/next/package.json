@@ -1,6 +1,6 @@
 {
   "name": "@hybld/next",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Next.js render backend and helpers for hybld (scoped static export and merge)",
   "author": "HyScaler",
   "license": "MIT",
