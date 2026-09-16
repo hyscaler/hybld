@@ -52,7 +52,7 @@ export function createFetcher(opts: FetcherOptions = {}): Fetcher {
   const headersKey = createHash("sha1").update(JSON.stringify(opts.headers ?? {})).digest("hex").slice(0, 8);
 
   let active = 0;
-  let lastStart = 0;
+  let nextStart = 0;
   let count = 0;
   let diskCache: DiskCacheOptions | null = null;
   const queue: Array<() => void> = [];
@@ -110,9 +110,16 @@ export function createFetcher(opts: FetcherOptions = {}): Fetcher {
     try {
       for (let attempt = 0; ; attempt++) {
         if (minGapMs > 0) {
-          const wait = lastStart + minGapMs - Date.now();
-          if (wait > 0) await sleep(wait);
-          lastStart = Date.now();
+          // Reserve a start slot SYNCHRONOUSLY (no await between read and
+          // write): concurrent requests each advance nextStart by one gap and
+          // sleep until their own slot. Reading a shared "last start" and
+          // sleeping on it let every in-flight request compute the same wait
+          // and fire together, bursts of size `concurrency` per gap instead
+          // of the configured rate.
+          const now = Date.now();
+          const slot = Math.max(now, nextStart);
+          nextStart = slot + minGapMs;
+          if (slot > now) await sleep(slot - now);
         }
         count++;
         let res: Response | null = null;

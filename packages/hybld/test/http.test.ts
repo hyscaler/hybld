@@ -36,6 +36,19 @@ describe("createFetcher", () => {
     expect(hits["/flaky"]).toBe(3); // two 429s + one success
   });
 
+  it("requestsPerSecond paces CONCURRENT requests (no bursts of size concurrency)", async () => {
+    hits = {};
+    failFirst = 0;
+    // 6 concurrent requests at 10/s must take >= 5 gaps (~500ms). Before the
+    // slot-reservation fix, all in-flight requests slept on the same stale
+    // timestamp and fired together, finishing near-instantly.
+    const fetcher = createFetcher({ requestsPerSecond: 10, concurrency: 8, memoize: false });
+    const t0 = Date.now();
+    await Promise.all(Array.from({ length: 6 }, (_, i) => fetcher(`${base}/paced${i}`)));
+    const elapsed = Date.now() - t0;
+    expect(elapsed).toBeGreaterThanOrEqual(450);
+  });
+
   it("memoizes identical GETs within a run and clears on demand", async () => {
     hits = {};
     const fetcher = createFetcher();

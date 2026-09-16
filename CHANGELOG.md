@@ -2,6 +2,16 @@
 
 All notable changes to the hybld packages are documented here. All packages version together (linked via Changesets); per-package changelogs are generated from 1.0.0 onward.
 
+## Unreleased
+
+- http: the requestsPerSecond throttle now paces concurrent requests
+  correctly. In-flight requests used to sleep against the same stale
+  timestamp and fire together, bursts of up to `concurrency` requests
+  per gap (effective rate = concurrency x requestsPerSecond). Start
+  slots are now reserved atomically, so the configured rate holds under
+  any concurrency. The reactive 429/Retry-After backoff was never
+  affected.
+
 ## 1.0.0 (2026-08-19)
 
 First stable release. Validated end to end against two live production
