@@ -15,7 +15,7 @@ pnpm test          # builds, then runs all test suites
 - `packages/hybld`: core engine (manifest, scopes, dependents, renderer, serve, CLI)
 - `packages/next`, `packages/astro`: delegated framework backends
 - `packages/adapter-*`: CMS presets
-- `examples/`: four demo apps, e2e-verified against the mock CMS (`cd examples/demo-site && node mock-cms/server.mjs`, port 4399)
+- `examples/`: three starters on the published packages against a live public API, and four internal demos on workspace code against the mock CMS (`cd examples/demo-site && node mock-cms/server.mjs`, port 4399); see `examples/README.md`
 - `docs/`: documentation site (Astro Starlight; `cd docs && npm install && npm run build`)
 
 ## Making changes

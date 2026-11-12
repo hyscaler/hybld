@@ -2,7 +2,7 @@
 
 Incremental and selective static builds for React + Vite, Next.js, and Astro projects backed by a headless CMS. Publish one article; rebuild one page and its listings, not the site.
 
-**Documentation is a Starlight site in [`docs/`](./docs/)**: getting started, concepts, configuration and CLI references, per-framework guides, adapters, deployment, scaling to large catalogs, the programmatic API, backend authoring, and troubleshooting. Run it locally with `cd docs && npm install && npm run dev`, or read the markdown sources directly in `docs/src/content/docs/`. Project history: `REQUIREMENTS.md` (engine spec) and `MULTI-FRAMEWORK-PLAN.md` (multi-framework architecture).
+**Documentation is a Starlight site in [`docs/`](./docs/)**: getting started, concepts, configuration and CLI references, per-framework guides, adapters, deployment, scaling to large catalogs, the programmatic API, backend authoring, and troubleshooting. Run it locally with `cd docs && npm install && npm run dev`, or read the markdown sources directly in `docs/src/content/docs/`. The original design documents are kept in `docs/history/` for context; they are not maintained.
 
 Requires Node >= 22.5 (uses the built-in `node:sqlite`) and pnpm.
 

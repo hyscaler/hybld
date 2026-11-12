@@ -1,5 +1,7 @@
 # hybld: Requirements Document
 
+> Historical design document, kept for context. It records the plan as written before implementation and is not maintained; where it differs from the code or the docs site, the code and docs are correct.
+
 Incremental and selective static site builds for React + Vite projects backed by a headless CMS.
 
 Status: Draft v2 (revised after scale and gap analysis)

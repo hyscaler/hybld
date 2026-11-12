@@ -1,5 +1,7 @@
 # Multi-Framework Plan: React + Vite, Next.js, Astro
 
+> Historical design document, kept for context. It records the plan as written before implementation and is not maintained; where it differs from the code or the docs site, the code and docs are correct.
+
 Status: IMPLEMENTED (v1.0.0, 2026-07-20). All phases collapsed into one build at the user's direction; every gap from the deep analysis was addressed. See "Implementation notes" at the end for where reality diverged from this plan.
 Date: 2026-07-20
 Prerequisite reading: REQUIREMENTS.md (the engine this plan generalizes)
