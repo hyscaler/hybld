@@ -241,16 +241,17 @@ export class Builder {
       // deferred file removals ran; finish them now (see journal notes below).
       this.replayRemovalJournal();
 
-      const { jobs, deletions } = await this.resolveScope(opts, assetHash, summary);
+      const delegated = this.backend.mode === "delegated";
+      const batchSize = opts.batchSize ?? this.config.render.batchSize;
+      // Catalog-wide scopes are streamed: the CMS listing is consumed in
+      // windows that are evaluated, rendered, written and checkpointed one at
+      // a time, so memory stays flat however large the catalog is. Delegated
+      // backends stream only with a batch size (one framework build per
+      // window); without one the whole scope must reach a single build.
+      const windowSize = delegated ? batchSize : CATALOG_WINDOW;
+      const streamed = windowSize !== undefined && isCatalogScope(opts);
+      const deletions: Deletion[] = [];
 
-      // Dependents are resolved BEFORE rendering so delegated backends run a
-      // single framework build per run, never one for pages + one for deps.
-      let allJobs = [...jobs];
-      if (!opts.noDependents) {
-        const depJobs = await this.resolveDependents(jobs, deletions, summary);
-        const have = new Set(jobs.map((j) => j.route));
-        allJobs.push(...depJobs.filter((j) => !have.has(j.route)));
-      }
       // Delegated: singleton aggregates (home, 404) are static framework
       // routes rebuilt on EVERY framework run, so their data must ride along
       // in every batch's scope file (the page reads it via hybldData) and
@@ -258,7 +259,9 @@ export class Builder {
       // route type needs at least one entry in the batch: Next's static
       // export refuses a generateStaticParams that returns an empty list, so
       // empty types are padded with one already-built page from the manifest.
-      if (this.backend.mode === "delegated" && allJobs.length > 0) {
+      const padForBackend = async (jobs: Job[]): Promise<Job[]> => {
+        if (!delegated || jobs.length === 0) return jobs;
+        const allJobs = [...jobs];
         const have = new Set(allJobs.map((j) => j.route));
         for (const [name, page] of this.aggregateTypes()) {
           if (page.enumerate) continue;
@@ -274,11 +277,59 @@ export class Builder {
         }
         const presentTypes = new Set(allJobs.map((j) => (j.kind === "article" ? j.collectionType : j.pageType)));
         allJobs.push(...(await this.paddingJobs(presentTypes)));
+        return allJobs;
+      };
+
+      // The run's jobs, as one or more windows. Dependents are resolved
+      // BEFORE rendering so delegated backends never run one framework build
+      // for pages and another for their dependents.
+      const self = this;
+      async function* jobWindows(): AsyncGenerator<Job[]> {
+        if (!streamed) {
+          const scope = await self.resolveScope(opts, assetHash, summary);
+          deletions.push(...scope.deletions);
+          const all = [...scope.jobs];
+          if (!opts.noDependents) {
+            const depJobs = await self.resolveDependents(scope.jobs, deletions, summary);
+            const have = new Set(scope.jobs.map((j) => j.route));
+            all.push(...depJobs.filter((j) => !have.has(j.route)));
+          }
+          yield all;
+          return;
+        }
+        const seen = new Set<string>();
+        const depRefs = new Map<string, DependentRef>();
+        for await (const items of self.catalogWindows(opts, windowSize as number, deletions)) {
+          const jobs: Job[] = [];
+          for (const { type, article } of items) {
+            const cfg = self.collectionCfg(type);
+            const route = cfg.route(article);
+            if (seen.has(route)) continue; // a listing that shifted mid-run can repeat an item
+            seen.add(route);
+            jobs.push({ kind: "article", route, article, collectionType: type });
+            // A full build rebuilds every aggregate anyway.
+            if (!opts.all && !opts.noDependents) {
+              for (const ref of cfg.dependents?.(article) ?? []) depRefs.set(JSON.stringify(ref), ref);
+            }
+          }
+          if (jobs.length > 0) yield jobs;
+        }
+        // Tail window: the pages derived from the catalog.
+        const tail: Job[] = opts.all
+          ? await self.allAggregateJobs()
+          : opts.noDependents
+            ? []
+            : await self.resolveDependentRefs([...depRefs.values()], deletions, summary);
+        yield tail.filter((j) => !seen.has(j.route));
       }
 
       if (opts.dryRun) {
         summary.dryRun = true;
-        summary.plannedRoutes = allJobs.map((j) => j.route);
+        summary.plannedRoutes = [];
+        for await (const win of jobWindows()) {
+          for (const job of await padForBackend(win)) summary.plannedRoutes.push(job.route);
+        }
+        summary.plannedRoutes = [...new Set(summary.plannedRoutes)];
         summary.deleted = deletions.map((d) => d.route);
         summary.durationMs = Date.now() - t0;
         return summary;
@@ -296,203 +347,234 @@ export class Builder {
       // files that no longer exist.
       const pendingRemovals: string[] = [];
 
-      // Moves (FR-17), detected against the manifest per collection.
-      for (const job of allJobs) {
-        if (job.kind !== "article") continue;
-        const row = this.manifest.byArticleId(this.idOf(job.collectionType, job.article), job.collectionType);
-        if (row && row.route !== job.route) {
-          summary.moved.push({ from: row.route, to: job.route });
-          redirects.addMove(row.route, job.route);
-          pendingRemovals.push(...this.pageFilesOf(row.outputPath));
-          this.manifest.remove(row.route);
-        }
-      }
-
-      // Phase 1: evaluate (fetch data, hash, skip decision). Engine-side, identical for both strategies.
-      const evaluated: EvaluatedJob[] = [];
-      await mapLimit(allJobs, opts.concurrency ?? this.config.render.workers, async (job) => {
-        try {
-          evaluated.push(await this.evaluateJob(job));
-        } catch (err: any) {
-          summary.failed.push({ route: job.route, error: err?.message ?? String(err) });
-          if (opts.failFast) throw err;
-        }
-      });
-      // Force re-render when the file is missing or the asset graph moved on.
-      // Delegated singleton/padding jobs always render: the framework needs
-      // their scope entries in every run.
-      const freshSkipped: EvaluatedJob[] = [];
-      const toRender = evaluated.filter((ev) => {
-        if (ev.job.forceRender) return true;
-        const existing = this.manifest.get(ev.job.route);
-        const fresh =
-          !opts.force &&
-          existing &&
-          existing.contentHash === ev.contentHash &&
-          existing.assetGraphHash === assetHash &&
-          existsSync(join(this.config.outDir, existing.outputPath));
-        if (fresh) freshSkipped.push(ev);
-        // Manifest recovery: a page with no manifest row whose output file is
-        // already on disk is recorded as built instead of rendered again.
-        if (!fresh && opts.adopt && !existing) {
-          const outputPath = this.existingOutputFor(ev.job.route);
-          if (outputPath) {
-            this.upsertFromEvaluated(ev, assetHash, outputPath);
-            summary.adopted = (summary.adopted ?? 0) + 1;
-            freshSkipped.push(ev);
-            return false;
-          }
-        }
-        return !fresh;
-      });
-      // Delegated: freshness-skipping must not empty a dynamic route type out
-      // of the batch (batch padding ran before this filter, and Next's export
-      // refuses an empty generateStaticParams). Promote one fresh page per
-      // emptied type back in; the unchanged-content check after render still
-      // reports it as skipped.
-      if (this.backend.mode === "delegated" && toRender.length > 0) {
-        const present = new Set(toRender.map((ev) => ev.renderJob.pageType));
-        for (const ev of freshSkipped) {
-          if (!present.has(ev.renderJob.pageType)) {
-            present.add(ev.renderJob.pageType);
-            ev.job.forceRender = true;
-            toRender.push(ev);
-          } else {
-            summary.skipped.push(ev.job.route);
-          }
-        }
-      } else {
-        for (const ev of freshSkipped) summary.skipped.push(ev.job.route);
-      }
-
-      // Phase 2: render through the backend and write as results land. The
-      // owned backend renders in bounded slices so a large scope never holds
-      // every page's HTML in memory at once (and completed slices survive a
-      // late crash); delegated backends get the whole scope in ONE framework
-      // build by default. With render.batchSize (or --batch-size) a large
-      // delegated scope is split into several framework builds, each padded
-      // so every page type stays present, and the manifest is checkpointed
-      // between batches so a crash late in a long first build keeps the
-      // batches already merged.
-      const RENDER_SLICE = 500;
-      const delegated = this.backend.mode === "delegated";
-      const batchSize = opts.batchSize ?? this.config.render.batchSize;
-      const sliceSize = delegated ? Math.max(1, batchSize ?? toRender.length) : RENDER_SLICE;
-      const slices: EvaluatedJob[][] = [];
-      if (toRender.length === 0) slices.push([]);
-      for (let i = 0; i < toRender.length; i += sliceSize) slices.push(toRender.slice(i, i + sliceSize));
-      if (delegated && slices.length > 1) {
-        const firstOfType = new Map<string, EvaluatedJob>();
-        for (const ev of toRender) {
-          if (!firstOfType.has(ev.renderJob.pageType)) firstOfType.set(ev.renderJob.pageType, ev);
-        }
-        for (const slice of slices) {
-          const present = new Set(slice.map((ev) => ev.renderJob.pageType));
-          for (const [type, ev] of firstOfType) if (!present.has(type)) slice.push(ev);
-        }
-      }
+      // Shared across windows: routes already recorded, and every asset file
+      // any batch produced.
       const handled = new Set<string>();
       const assetFilesSeen = new Set<string>();
-      for (const [sliceIndex, slice] of slices.entries()) {
-        const lastSlice = sliceIndex === slices.length - 1;
-        if (slices.length > 1) this.log(`render batch ${sliceIndex + 1}/${slices.length} (${slice.length} pages)`);
-        const results = await this.backend.renderBatch(slice.map((ev) => ev.renderJob));
-        const byRoute = new Map(slice.map((ev) => [ev.job.route, ev]));
-        for (const result of results) {
-          const ev = byRoute.get(result.route);
-          // A padding page rides in several batches; record it once.
-          if (result.kind !== "extra") {
-            if (handled.has(result.route)) continue;
-            handled.add(result.route);
+      let windowIndex = 0;
+
+      /** Evaluate, render, write and record one window of jobs. */
+      const processJobs = async (windowJobs: Job[], lastWindow: boolean): Promise<void> => {
+        const allJobs = await padForBackend(windowJobs);
+        windowIndex++;
+        if (streamed) this.log(`window ${windowIndex}: ${allJobs.length} pages`);
+        // Moves (FR-17), detected against the manifest per collection.
+        for (const job of allJobs) {
+          if (job.kind !== "article") continue;
+          const row = this.manifest.byArticleId(this.idOf(job.collectionType, job.article), job.collectionType);
+          if (row && row.route !== job.route) {
+            summary.moved.push({ from: row.route, to: job.route });
+            redirects.addMove(row.route, job.route);
+            pendingRemovals.push(...this.pageFilesOf(row.outputPath));
+            this.manifest.remove(row.route);
           }
+        }
+
+        // Phase 1: evaluate (fetch data, hash, skip decision). Engine-side, identical for both strategies.
+        const evaluated: EvaluatedJob[] = [];
+        await mapLimit(allJobs, opts.concurrency ?? this.config.render.workers, async (job) => {
           try {
-            if (result.kind === "failed") {
-              summary.failed.push({ route: result.route, error: result.error });
-              if (opts.failFast) throw new Error(result.error);
-              continue;
-            }
-            if (result.kind === "extra") {
-              await this.mergeExtra(result, assetHash, writer);
-              continue;
-            }
-            if (!ev) continue;
-            // Padding/singleton jobs re-render on every delegated run by
-            // necessity; when nothing about them changed, report them as
-            // skipped so no-op runs don't look like content changes (and
-            // don't force sitemap/feed regeneration).
-            const before = ev.job.forceRender ? this.manifest.get(result.route) : undefined;
-            const unchanged =
-              Boolean(before) && before!.contentHash === ev.contentHash && before!.assetGraphHash === assetHash;
-            if (result.kind === "html") {
-              await this.writeOwnedPage(ev, result.html, assetHash, writer);
-            } else {
-              await this.mergeDelegatedPage(ev, result, assetHash, writer);
-            }
-            if (unchanged) {
-              summary.skipped.push(result.route);
-            } else {
-              summary.built.push(result.route);
-              if (ev.job.isDependent) summary.dependentsRebuilt.push(result.route);
-            }
+            evaluated.push(await this.evaluateJob(job));
           } catch (err: any) {
-            summary.failed.push({ route: result.route, error: err?.message ?? String(err) });
+            summary.failed.push({ route: job.route, error: err?.message ?? String(err) });
             if (opts.failFast) throw err;
           }
-        }
-
-        // The framework's staging dir is replaced by the next batch's build,
-        // so everything below merges per batch.
-        // Delegated: merge the framework's hashed assets append-only.
-        if (this.backend instanceof DelegatedBackend) {
-          for (const { absPath, relPath } of this.backend.stagedAssetFiles()) {
-            const target = join(this.config.outDir, relPath);
-            if (!existsSync(target)) {
-              mkdirSync(dirname(target), { recursive: true });
-              copyFileSync(absPath, target);
-              writer.created.push(relPath);
+        });
+        // Force re-render when the file is missing or the asset graph moved on.
+        // Delegated singleton/padding jobs always render: the framework needs
+        // their scope entries in every run.
+        const freshSkipped: EvaluatedJob[] = [];
+        const alreadyHandled: EvaluatedJob[] = [];
+        const toRender = evaluated.filter((ev) => {
+          if (ev.job.forceRender) return true;
+          // Already recorded in an earlier window (it rode along as padding):
+          // not counted again, but still available to keep its type present.
+          if (handled.has(ev.job.route)) {
+            alreadyHandled.push(ev);
+            return false;
+          }
+          const existing = this.manifest.get(ev.job.route);
+          const fresh =
+            !opts.force &&
+            existing &&
+            existing.contentHash === ev.contentHash &&
+            existing.assetGraphHash === assetHash &&
+            existsSync(join(this.config.outDir, existing.outputPath));
+          if (fresh) freshSkipped.push(ev);
+          // Manifest recovery: a page with no manifest row whose output file is
+          // already on disk is recorded as built instead of rendered again.
+          if (!fresh && opts.adopt && !existing) {
+            const outputPath = this.existingOutputFor(ev.job.route);
+            if (outputPath) {
+              this.upsertFromEvaluated(ev, assetHash, outputPath);
+              summary.adopted = (summary.adopted ?? 0) + 1;
+              freshSkipped.push(ev);
+              return false;
             }
           }
-          // Non-page, non-asset outputs (public/ files, robots.txt, favicons,
-          // rss.xml): overwrite-copy, since these are unhashed and can change
-          // without renaming. Byte-compare keeps the changed-files report honest.
-          for (const { absPath, relPath } of this.backend.stagedStaticFiles()) {
-            const target = join(this.config.outDir, relPath);
-            const src = readFileSync(absPath);
-            if (existsSync(target)) {
-              if (src.equals(readFileSync(target))) continue;
-              copyFileSync(absPath, target);
-              writer.updated.push(relPath);
+          return !fresh;
+        });
+        // Delegated: freshness-skipping must not empty a dynamic route type out
+        // of the batch (batch padding ran before this filter, and Next's export
+        // refuses an empty generateStaticParams). Promote one fresh page per
+        // emptied type back in; the unchanged-content check after render still
+        // reports it as skipped.
+        if (this.backend.mode === "delegated" && toRender.length > 0) {
+          const present = new Set(toRender.map((ev) => ev.renderJob.pageType));
+          for (const ev of freshSkipped) {
+            if (!present.has(ev.renderJob.pageType)) {
+              present.add(ev.renderJob.pageType);
+              ev.job.forceRender = true;
+              toRender.push(ev);
             } else {
-              mkdirSync(dirname(target), { recursive: true });
-              copyFileSync(absPath, target);
-              writer.created.push(relPath);
+              summary.skipped.push(ev.job.route);
             }
           }
-        }
-        for (const file of this.backend.assetFiles) assetFilesSeen.add(file);
-
-        // Backend post-merge housekeeping (e.g. Next Pages Router data JSON
-        // fan-out/pruning); its removals join the run's deferred deletions.
-        // Deletions are handed over once, with the last batch.
-        if (this.backend.finalizeMerge) {
-          const fin = this.backend.finalizeMerge({
-            deletedPageOutputs: lastSlice ? deletions.map((d) => d.outputPath) : [],
-          });
-          writer.created.push(...fin.created);
-          writer.updated.push(...fin.updated);
-          pendingRemovals.push(...fin.removals);
+          for (const ev of alreadyHandled) {
+            if (!present.has(ev.renderJob.pageType)) {
+              present.add(ev.renderJob.pageType);
+              toRender.push(ev);
+            }
+          }
+        } else {
+          for (const ev of freshSkipped) summary.skipped.push(ev.job.route);
         }
 
-        // Checkpoint: make the batches merged so far durable. Only when no
-        // file removals are pending, since those are journaled against the
-        // run's final commit. The flag forces sitemap/feed regeneration if
-        // the run dies after its last checkpoint.
-        if (!lastSlice && pendingRemovals.length === 0) {
-          this.manifest.setMeta("runIncomplete", "1");
-          this.manifest.commit();
-          this.manifest.begin();
+        // Phase 2: render through the backend and write as results land. The
+        // owned backend renders in bounded slices so a large scope never holds
+        // every page's HTML in memory at once (and completed slices survive a
+        // late crash); delegated backends get the whole scope in ONE framework
+        // build by default. With render.batchSize (or --batch-size) a large
+        // delegated scope is split into several framework builds, each padded
+        // so every page type stays present, and the manifest is checkpointed
+        // between batches so a crash late in a long first build keeps the
+        // batches already merged.
+        const RENDER_SLICE = 500;
+        // A streamed delegated window is already one batch: one framework build.
+        const sliceSize = delegated ? Math.max(1, streamed ? toRender.length : (batchSize ?? toRender.length)) : RENDER_SLICE;
+        const slices: EvaluatedJob[][] = [];
+        if (toRender.length === 0) slices.push([]);
+        for (let i = 0; i < toRender.length; i += sliceSize) slices.push(toRender.slice(i, i + sliceSize));
+        if (delegated && slices.length > 1) {
+          const firstOfType = new Map<string, EvaluatedJob>();
+          for (const ev of toRender) {
+            if (!firstOfType.has(ev.renderJob.pageType)) firstOfType.set(ev.renderJob.pageType, ev);
+          }
+          for (const slice of slices) {
+            const present = new Set(slice.map((ev) => ev.renderJob.pageType));
+            for (const [type, ev] of firstOfType) if (!present.has(type)) slice.push(ev);
+          }
         }
+        for (const [sliceIndex, slice] of slices.entries()) {
+          const lastSlice = lastWindow && sliceIndex === slices.length - 1;
+          if (slices.length > 1) this.log(`render batch ${sliceIndex + 1}/${slices.length} (${slice.length} pages)`);
+          const results = await this.backend.renderBatch(slice.map((ev) => ev.renderJob));
+          const byRoute = new Map(slice.map((ev) => [ev.job.route, ev]));
+          for (const result of results) {
+            const ev = byRoute.get(result.route);
+            // A padding page rides in several batches; record it once.
+            if (result.kind !== "extra") {
+              if (handled.has(result.route)) continue;
+              handled.add(result.route);
+            }
+            try {
+              if (result.kind === "failed") {
+                summary.failed.push({ route: result.route, error: result.error });
+                if (opts.failFast) throw new Error(result.error);
+                continue;
+              }
+              if (result.kind === "extra") {
+                await this.mergeExtra(result, assetHash, writer);
+                continue;
+              }
+              if (!ev) continue;
+              // Padding/singleton jobs re-render on every delegated run by
+              // necessity; when nothing about them changed, report them as
+              // skipped so no-op runs don't look like content changes (and
+              // don't force sitemap/feed regeneration).
+              const before = ev.job.forceRender ? this.manifest.get(result.route) : undefined;
+              const unchanged =
+                Boolean(before) && before!.contentHash === ev.contentHash && before!.assetGraphHash === assetHash;
+              if (result.kind === "html") {
+                await this.writeOwnedPage(ev, result.html, assetHash, writer);
+              } else {
+                await this.mergeDelegatedPage(ev, result, assetHash, writer);
+              }
+              if (unchanged) {
+                summary.skipped.push(result.route);
+              } else {
+                summary.built.push(result.route);
+                if (ev.job.isDependent) summary.dependentsRebuilt.push(result.route);
+              }
+            } catch (err: any) {
+              summary.failed.push({ route: result.route, error: err?.message ?? String(err) });
+              if (opts.failFast) throw err;
+            }
+          }
+
+          // The framework's staging dir is replaced by the next batch's build,
+          // so everything below merges per batch.
+          // Delegated: merge the framework's hashed assets append-only.
+          if (this.backend instanceof DelegatedBackend) {
+            for (const { absPath, relPath } of this.backend.stagedAssetFiles()) {
+              const target = join(this.config.outDir, relPath);
+              if (!existsSync(target)) {
+                mkdirSync(dirname(target), { recursive: true });
+                copyFileSync(absPath, target);
+                writer.created.push(relPath);
+              }
+            }
+            // Non-page, non-asset outputs (public/ files, robots.txt, favicons,
+            // rss.xml): overwrite-copy, since these are unhashed and can change
+            // without renaming. Byte-compare keeps the changed-files report honest.
+            for (const { absPath, relPath } of this.backend.stagedStaticFiles()) {
+              const target = join(this.config.outDir, relPath);
+              const src = readFileSync(absPath);
+              if (existsSync(target)) {
+                if (src.equals(readFileSync(target))) continue;
+                copyFileSync(absPath, target);
+                writer.updated.push(relPath);
+              } else {
+                mkdirSync(dirname(target), { recursive: true });
+                copyFileSync(absPath, target);
+                writer.created.push(relPath);
+              }
+            }
+          }
+          for (const file of this.backend.assetFiles) assetFilesSeen.add(file);
+
+          // Backend post-merge housekeeping (e.g. Next Pages Router data JSON
+          // fan-out/pruning); its removals join the run's deferred deletions.
+          // Deletions are handed over once, with the last batch.
+          if (this.backend.finalizeMerge) {
+            const fin = this.backend.finalizeMerge({
+              deletedPageOutputs: lastSlice ? deletions.map((d) => d.outputPath) : [],
+            });
+            writer.created.push(...fin.created);
+            writer.updated.push(...fin.updated);
+            pendingRemovals.push(...fin.removals);
+          }
+
+          // Checkpoint: make the batches merged so far durable. Only when no
+          // file removals are pending, since those are journaled against the
+          // run's final commit. The flag forces sitemap/feed regeneration if
+          // the run dies after its last checkpoint.
+          if (!lastSlice && pendingRemovals.length === 0) {
+            this.manifest.setMeta("runIncomplete", "1");
+            this.manifest.commit();
+            this.manifest.begin();
+          }
+        }
+      };
+
+      // One window of lookahead, so the last window knows it is the last.
+      let pendingWindow: Job[] | null = null;
+      for await (const win of jobWindows()) {
+        if (pendingWindow) await processJobs(pendingWindow, false);
+        pendingWindow = win;
       }
+      await processJobs(pendingWindow ?? [], true);
+
       if (assetFilesSeen.size > 0) {
         this.manifest.recordAssetGraph(assetHash, [...assetFilesSeen]);
       }
@@ -882,10 +964,9 @@ export class Builder {
         return ia < ib ? -1 : ia > ib ? 1 : 0;
       });
       if (opts.chunk) {
-        const size = Math.ceil(catalog.length / opts.chunk.total);
-        catalog
-          .slice((opts.chunk.index - 1) * size, opts.chunk.index * size)
-          .forEach(({ type, article }) => addArticleJob(type, article));
+        for (const { type, article } of catalog) {
+          if (chunkBucket(type, this.idOf(type, article), opts.chunk.total) === opts.chunk.index - 1) addArticleJob(type, article);
+        }
       } else {
         const known = this.manifest.routes();
         let taken = 0;
@@ -961,6 +1042,105 @@ export class Builder {
     }
 
     return { jobs: [...jobs.values()], deletions };
+  }
+
+  /**
+   * The collection items of a catalog-wide scope (--all, --chunk,
+   * --chunk-size, --since), yielded in windows so the caller never holds the
+   * whole catalog. Listing pages are fetched `cms.concurrency` at a time when
+   * the adapter reports a count, serially otherwise. Deletions reported by
+   * --since are appended to `deletions` as they are discovered.
+   */
+  private async *catalogWindows(
+    opts: BuildOptions,
+    windowSize: number,
+    deletions: Deletion[]
+  ): AsyncGenerator<Array<{ type: string; article: any }>> {
+    const perPage = this.config.cms.perPage;
+    const since = opts.since !== undefined ? this.resolveSince(opts.since) : null;
+    if (since && !this.collections().some(([type]) => this.adapterFor(type).listModifiedSince)) {
+      throw new Error(
+        `No collection adapter implements listModifiedSince(); --since is unavailable. Use targeted builds or a full build instead.`
+      );
+    }
+    const known = opts.chunkSize !== undefined ? this.manifest.routes() : null;
+    let taken = 0;
+    const accept = (type: string, article: any): boolean => {
+      if (opts.chunk) return chunkBucket(type, this.idOf(type, article), opts.chunk.total) === opts.chunk.index - 1;
+      if (known) {
+        if (taken >= (opts.chunkSize as number) || known.has(this.collectionCfg(type).route(article))) return false;
+        taken++;
+      }
+      return true;
+    };
+    const done = () => known !== null && taken >= (opts.chunkSize as number);
+
+    const self = this;
+    async function* pages(type: string): AsyncGenerator<any[]> {
+      const adapter = self.adapterFor(type);
+      if (since) {
+        if (!adapter.listModifiedSince) return;
+        const guard = pageLoopGuard(adapter.name);
+        for (let page = 1; ; page++) {
+          const res = await adapter.listModifiedSince(since, { page, perPage });
+          guard(res.items, page);
+          yield res.items;
+          if (!res.hasMore || res.items.length === 0) return;
+        }
+      }
+      let total: number | null = null;
+      try {
+        total = await adapter.count();
+      } catch {
+        /* count() unsupported: serial pagination below */
+      }
+      if (total !== null) {
+        const pageCount = Math.max(1, Math.ceil(total / perPage));
+        const group = Math.max(1, self.config.cms.concurrency);
+        for (let first = 1; first <= pageCount; first += group) {
+          const numbers = Array.from({ length: Math.min(group, pageCount - first + 1) }, (_, i) => first + i);
+          const fetched = await Promise.all(numbers.map((page) => adapter.listArticles({ page, perPage })));
+          for (const res of fetched) yield res.items;
+        }
+        return;
+      }
+      const guard = pageLoopGuard(adapter.name);
+      for (let page = 1; ; page++) {
+        const res = await adapter.listArticles({ page, perPage });
+        guard(res.items, page);
+        yield res.items;
+        if (!res.hasMore || res.items.length === 0) return;
+      }
+    }
+
+    let buf: Array<{ type: string; article: any }> = [];
+    for (const [type] of this.collections()) {
+      if (done()) break;
+      for await (const items of pages(type)) {
+        for (const article of items) {
+          if (!accept(type, article)) continue;
+          buf.push({ type, article });
+          if (buf.length >= windowSize) {
+            yield buf;
+            buf = [];
+          }
+        }
+        if (done()) break;
+      }
+      const adapter = this.adapterFor(type);
+      if (since && adapter.listModifiedSince && adapter.listDeletedSince) {
+        for (const ref of await adapter.listDeletedSince(since)) {
+          const row =
+            ref.id !== undefined
+              ? this.manifest.byArticleId(ref.id, type)
+              : ref.slug
+                ? this.manifest.bySlug(ref.slug, type)
+                : null;
+          if (row) deletions.push({ route: row.route, outputPath: row.outputPath, dependentsRef: row.dependentsRef });
+        }
+      }
+    }
+    if (buf.length > 0) yield buf;
   }
 
   private resolveSince(value: string): Date {
@@ -1052,7 +1232,21 @@ export class Builder {
     return out;
   }
 
-  private async resolveDependents(jobs: Job[], deletions: Deletion[], summary: BuildSummary): Promise<Job[]> {
+  /** Dependent pages of a set of article jobs (and of deleted pages). */
+  private resolveDependents(jobs: Job[], deletions: Deletion[], summary: BuildSummary): Promise<Job[]> {
+    // Most articles share a handful of dependents (home, their category):
+    // resolve each distinct reference once, not once per article.
+    const refs = new Map<string, DependentRef>();
+    for (const job of jobs) {
+      if (job.kind !== "article") continue;
+      for (const ref of this.collectionCfg(job.collectionType).dependents?.(job.article) ?? []) {
+        refs.set(JSON.stringify(ref), ref);
+      }
+    }
+    return this.resolveDependentRefs([...refs.values()], deletions, summary);
+  }
+
+  private async resolveDependentRefs(refs: DependentRef[], deletions: Deletion[], summary: BuildSummary): Promise<Job[]> {
     const out = new Map<string, Job>();
     const addRoute = async (ref: DependentRef) => {
       if (typeof ref === "string") {
@@ -1085,11 +1279,7 @@ export class Builder {
       }
     };
 
-    for (const job of jobs) {
-      if (job.kind !== "article") continue;
-      const cfg = this.collectionCfg(job.collectionType);
-      for (const ref of cfg.dependents?.(job.article) ?? []) await addRoute(ref);
-    }
+    for (const ref of refs) await addRoute(ref);
     for (const del of deletions) {
       if (del.dependentsRef) {
         for (const ref of JSON.parse(del.dependentsRef) as DependentRef[]) await addRoute(ref);
@@ -1522,4 +1712,23 @@ function previewHtml(html: string, keepScripts: boolean): string {
   }
   const robots = '<meta name="robots" content="noindex, nofollow">';
   return /<head\b[^>]*>/i.test(html) ? html.replace(/<head\b[^>]*>/i, (m) => `${m}${robots}`) : `${robots}${html}`;
+}
+
+/** Articles per window when a catalog-wide scope is streamed through the owned backend. */
+const CATALOG_WINDOW = 2000;
+
+/** Scopes that walk the CMS catalog (as opposed to naming pages or reading the manifest). */
+function isCatalogScope(opts: BuildOptions): boolean {
+  if (opts.limit !== undefined || opts.stale || opts.reconcile) return false;
+  if (opts.routes?.length || opts.slugs?.length || opts.ids?.length) return false;
+  return Boolean(opts.all) || Boolean(opts.chunk) || opts.chunkSize !== undefined || opts.since !== undefined;
+}
+
+/**
+ * Which --chunk i/n worker owns an item. A hash of its identity, so workers
+ * agree without listing or sorting the whole catalog first, and adding
+ * items never moves existing ones between chunks.
+ */
+function chunkBucket(type: string, id: string, total: number): number {
+  return createHash("sha1").update(`${type}:${id}`).digest().readUInt32BE(0) % total;
 }
