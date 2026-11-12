@@ -6,7 +6,7 @@ packages/*/dist/
 
 # hybld state and outputs (examples)
 .hybld/
-examples/*/dist/
+examples/*/dist
 examples/*/site/
 examples/*/out/
 examples/*/.next/
