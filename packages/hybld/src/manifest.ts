@@ -253,6 +253,22 @@ export class Manifest {
     return { total, byPageType };
   }
 
+  /** Collection pages in total, and how many of them were built from other code than `currentHash`. */
+  articleStaleness(currentHash: string): { stale: number; total: number } {
+    const r = this.db
+      .prepare(
+        `SELECT COUNT(*) AS total, SUM(CASE WHEN asset_graph_hash != ? THEN 1 ELSE 0 END) AS stale FROM pages WHERE article_id IS NOT NULL`
+      )
+      .get(currentHash) as any;
+    return { stale: Number(r.stale ?? 0), total: Number(r.total ?? 0) };
+  }
+
+  /** Stale pages that are not collection items (aggregates and static pages), oldest first. */
+  codeStaleAggregates(currentHash: string, limit?: number): ManifestRow[] {
+    const sql = `SELECT * FROM pages WHERE asset_graph_hash != ? AND article_id IS NULL ORDER BY built_at ASC${limit ? ` LIMIT ${Number(limit)}` : ""}`;
+    return (this.db.prepare(sql).all(currentHash) as any[]).map(toRow);
+  }
+
   codeStaleCount(currentHash: string): number {
     return (this.db.prepare(`SELECT COUNT(*) AS c FROM pages WHERE asset_graph_hash != ?`).get(currentHash) as any)
       .c as number;

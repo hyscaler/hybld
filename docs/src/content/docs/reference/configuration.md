@@ -41,7 +41,7 @@ export default defineConfig({
 | `template` | `index.html` | Vite HTML template; must contain `<!--app-head-->` and `<!--app-html-->`. |
 | `workers` | 4 | Render worker threads. Also used as the default engine-side concurrency. Crashed workers are respawned within a bounded budget; a bundle that kills every worker fails the build with the underlying error. |
 | `timeout` | 60000 | Per-page render timeout in ms. A hung render fails that page instead of stalling the build. |
-| `batchSize` | off | Framework backends (Next.js, Astro, SvelteKit, Nuxt) only. Splits a large scope into framework builds of at most this many pages and checkpoints the manifest between them, so a crash late in a long first build keeps the batches already merged. `--batch-size <n>` overrides it for one run. |
+| `batchSize` | 5000 | Framework backends (Next.js, Astro, SvelteKit, Nuxt) only. Splits a large scope into framework builds of at most this many pages and checkpoints the manifest between them, so a crash late in a long first build keeps the batches already merged. `--batch-size <n>` overrides it for one run. |
 
 ## `cms`
 

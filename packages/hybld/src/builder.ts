@@ -242,14 +242,19 @@ export class Builder {
       this.replayRemovalJournal();
 
       const delegated = this.backend.mode === "delegated";
-      const batchSize = opts.batchSize ?? this.config.render.batchSize;
+      const batchSize = opts.batchSize ?? this.config.render.batchSize ?? (delegated ? DEFAULT_BATCH_SIZE : undefined);
       // Catalog-wide scopes are streamed: the CMS listing is consumed in
       // windows that are evaluated, rendered, written and checkpointed one at
       // a time, so memory stays flat however large the catalog is. Delegated
       // backends stream only with a batch size (one framework build per
       // window); without one the whole scope must reach a single build.
       const windowSize = delegated ? batchSize : CATALOG_WINDOW;
-      const streamed = windowSize !== undefined && isCatalogScope(opts);
+      // --stale normally re-fetches each stale article by id. When most of
+      // the catalog is stale (the usual state right after a code deploy),
+      // walking the listing costs far fewer CMS requests.
+      const staleLimit = opts.stale ? opts.chunkSize : undefined;
+      const staleScan = Boolean(opts.stale) && windowSize !== undefined && this.staleScanIsCheaper(assetHash, staleLimit);
+      const streamed = windowSize !== undefined && (isCatalogScope(opts) || staleScan);
       const deletions: Deletion[] = [];
 
       // Delegated: singleton aggregates (home, 404) are static framework
@@ -299,7 +304,8 @@ export class Builder {
         }
         const seen = new Set<string>();
         const depRefs = new Map<string, DependentRef>();
-        for await (const items of self.catalogWindows(opts, windowSize as number, deletions)) {
+        let held: Job[] | null = null;
+        for await (const items of self.catalogWindows(opts, windowSize as number, deletions, staleScan ? assetHash : null)) {
           const jobs: Job[] = [];
           for (const { type, article } of items) {
             const cfg = self.collectionCfg(type);
@@ -312,15 +318,33 @@ export class Builder {
               for (const ref of cfg.dependents?.(article) ?? []) depRefs.set(JSON.stringify(ref), ref);
             }
           }
-          if (jobs.length > 0) yield jobs;
+          if (jobs.length > 0) {
+            if (held) yield held;
+            held = jobs;
+          }
         }
-        // Tail window: the pages derived from the catalog.
-        const tail: Job[] = opts.all
+        // Tail: the pages derived from the catalog.
+        const derived: Job[] = opts.all
           ? await self.allAggregateJobs()
-          : opts.noDependents
-            ? []
-            : await self.resolveDependentRefs([...depRefs.values()], deletions, summary);
-        yield tail.filter((j) => !seen.has(j.route));
+          : staleScan
+            ? [
+                ...(await self.staleAggregateJobs(assetHash, staleLimit === undefined ? undefined : Math.max(0, staleLimit - seen.size))),
+                ...(opts.noDependents ? [] : await self.resolveDependentRefs([...depRefs.values()], deletions, summary)),
+              ]
+            : opts.noDependents
+              ? []
+              : await self.resolveDependentRefs([...depRefs.values()], deletions, summary);
+        const tailSeen = new Set(seen);
+        const tail = derived.filter((j) => !tailSeen.has(j.route) && (tailSeen.add(j.route), true));
+        // The tail joins the last window when it fits, so a small scope (one
+        // published article and its listings) is still a single window: on a
+        // delegated backend, a single framework build.
+        if (held && held.length + tail.length <= (windowSize as number)) {
+          yield [...held, ...tail];
+        } else {
+          if (held) yield held;
+          yield tail;
+        }
       }
 
       if (opts.dryRun) {
@@ -1054,7 +1078,8 @@ export class Builder {
   private async *catalogWindows(
     opts: BuildOptions,
     windowSize: number,
-    deletions: Deletion[]
+    deletions: Deletion[],
+    staleHash: string | null = null
   ): AsyncGenerator<Array<{ type: string; article: any }>> {
     const perPage = this.config.cms.perPage;
     const since = opts.since !== undefined ? this.resolveSince(opts.since) : null;
@@ -1063,9 +1088,18 @@ export class Builder {
         `No collection adapter implements listModifiedSince(); --since is unavailable. Use targeted builds or a full build instead.`
       );
     }
-    const known = opts.chunkSize !== undefined ? this.manifest.routes() : null;
+    const known = opts.chunkSize !== undefined && !staleHash ? this.manifest.routes() : null;
+    const staleMax = staleHash ? (opts.chunkSize ?? Infinity) : 0;
     let taken = 0;
     const accept = (type: string, article: any): boolean => {
+      if (staleHash) {
+        // Stale scan: built pages whose code is behind, up to the limit.
+        if (taken >= staleMax) return false;
+        const row = this.manifest.get(this.collectionCfg(type).route(article));
+        if (!row || row.assetGraphHash === staleHash) return false;
+        taken++;
+        return true;
+      }
       if (opts.chunk) return chunkBucket(type, this.idOf(type, article), opts.chunk.total) === opts.chunk.index - 1;
       if (known) {
         if (taken >= (opts.chunkSize as number) || known.has(this.collectionCfg(type).route(article))) return false;
@@ -1073,7 +1107,7 @@ export class Builder {
       }
       return true;
     };
-    const done = () => known !== null && taken >= (opts.chunkSize as number);
+    const done = () => (staleHash ? taken >= staleMax : known !== null && taken >= (opts.chunkSize as number));
 
     const self = this;
     async function* pages(type: string): AsyncGenerator<any[]> {
@@ -1152,6 +1186,31 @@ export class Builder {
     const d = new Date(value);
     if (Number.isNaN(d.getTime())) throw new Error(`Invalid --since date: ${value}`);
     return d;
+  }
+
+  /**
+   * Whether a --stale run should walk the catalog listing instead of
+   * fetching each stale article by id: true when the stale articles it would
+   * fetch clearly outnumber the listing requests a full walk costs.
+   */
+  private staleScanIsCheaper(assetHash: string, limit?: number): boolean {
+    const { stale, total } = this.manifest.articleStaleness(assetHash);
+    const wanted = Math.min(stale, limit ?? Infinity);
+    const listingRequests = Math.ceil(total / this.config.cms.perPage);
+    return wanted > 200 && wanted > 2 * listingRequests;
+  }
+
+  /** Stale non-collection pages (aggregates), rebuilt from their stored source reference. */
+  private async staleAggregateJobs(assetHash: string, limit?: number): Promise<Job[]> {
+    if (limit === 0) return [];
+    const collectionNames = new Set(this.collections().map(([n]) => n));
+    const jobs: Job[] = [];
+    for (const row of this.manifest.codeStaleAggregates(assetHash, limit)) {
+      if (collectionNames.has(row.pageType) || !row.sourceRef) continue;
+      const ref = JSON.parse(row.sourceRef);
+      jobs.push({ kind: "aggregate", route: row.route, pageType: row.pageType, item: ref.item, page: ref.page });
+    }
+    return jobs;
   }
 
   private async staleJobs(assetHash: string, limit?: number): Promise<Job[]> {
@@ -1734,3 +1793,10 @@ function isCatalogScope(opts: BuildOptions): boolean {
 function chunkBucket(type: string, id: string, total: number): number {
   return createHash("sha1").update(`${type}:${id}`).digest().readUInt32BE(0) % total;
 }
+
+/**
+ * Pages per framework build on delegated backends when none is configured.
+ * Large enough that ordinary scopes stay a single build; small enough that a
+ * first build of a large catalog is streamed and resumable by default.
+ */
+const DEFAULT_BATCH_SIZE = 5000;

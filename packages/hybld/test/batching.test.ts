@@ -425,10 +425,13 @@ describe("delegated draft previews", () => {
 describe("streamed catalog builds", () => {
   const N = 4500; // crosses the 2000-article window twice
   const articles = Array.from({ length: N }, (_, i) => ({ id: i + 1, slug: `s${i + 1}`, title: `T${i + 1}`, cat: `c${i % 3}` }));
-  const make = (root: string) => {
+  const make = (root: string, graph = "g1") => {
     const rendered: string[] = [];
+    let itemFetches = 0;
+    const base = memoryAdapter(articles);
+    const adapter: CmsAdapter = { ...base, getArticle: async (ref) => (itemFetches++, base.getArticle(ref)) };
     const backend: any = {
-      name: "mem", mode: "owned", assetDirs: [], assetFiles: [], assetGraphHash: "g1",
+      name: "mem", mode: "owned", assetDirs: [], assetFiles: [], assetGraphHash: graph,
       async prepare() {},
       async renderBatch(jobs: any[]) {
         return jobs.map((j) => (rendered.push(j.route), { route: j.route, kind: "html", html: `<h1>${j.data.title ?? j.route}</h1>` }));
@@ -439,7 +442,7 @@ describe("streamed catalog builds", () => {
     const builder = new Builder(
       validateConfig(
         {
-          adapter: memoryAdapter(articles),
+          adapter,
           renderer: { name: "mem", mode: "owned", create: () => backend },
           outDir: "site",
           manifest: ".hybld/manifest.db",
@@ -462,7 +465,7 @@ describe("streamed catalog builds", () => {
         root
       )
     );
-    return { builder, rendered, enumerations: () => enumerations };
+    return { builder, rendered, enumerations: () => enumerations, itemFetches: () => itemFetches };
   };
 
   it("a full build covers the whole catalog across windows, and a rerun skips it all", async () => {
@@ -516,5 +519,33 @@ describe("streamed catalog builds", () => {
     const again = second.built.filter((r) => r.startsWith("/a/"));
     expect(again.length).toBe(300);
     expect(again.some((r) => first.built.includes(r))).toBe(false);
+  });
+
+  it("--stale after a code change walks the listing instead of fetching every article by id", async () => {
+    const root = mkdtempSync(join(tmpdir(), "hybld-stale-"));
+    const a = make(root, "g1");
+    await a.builder.build({ all: true });
+    await a.builder.close();
+
+    // New code (a different asset graph): the whole catalog is stale.
+    const b = make(root, "g2");
+    const part = await b.builder.build({ stale: true, chunkSize: 300 });
+    expect(part.failed).toEqual([]);
+    expect(part.built.filter((r) => r.startsWith("/a/")).length).toBe(300);
+    const rest = await b.builder.build({ stale: true });
+    const status = await b.builder.status();
+    await b.builder.close();
+    expect(rest.failed).toEqual([]);
+    expect(status.codeStale).toBe(0);
+    expect(b.itemFetches()).toBe(0); // none of the 4,500 articles was fetched individually
+
+    // With only a few stale pages left, fetching them by id is the cheaper path.
+    const c = make(root, "g3");
+    await c.builder.build({ all: true }); // everything rebuilt on g3
+    await c.builder.close();
+    const d = make(root, "g3");
+    const none = await d.builder.build({ stale: true });
+    await d.builder.close();
+    expect(none.built).toEqual([]);
   });
 });

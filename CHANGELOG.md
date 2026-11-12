@@ -20,6 +20,12 @@ Includes the 1.0.1 pacing fix below, which was never published on its own.
   1.1.x workers within one chunked build.
 - Distinct dependent references are resolved once per run instead of
   once per article.
+- `render.batchSize` now defaults to 5000 on the framework backends, so
+  large first builds are streamed and resumable without configuration.
+  A scope that fits in one batch is still one framework build.
+- `--stale` walks the catalog listing when most pages are stale (the
+  usual state after a code deploy) instead of fetching every stale
+  article by id, which cuts CMS requests by about the page size.
 - Batched framework builds for Next.js and Astro: `render.batchSize` (or
   `--batch-size <n>`) splits a large scope into several framework builds
   in one command. Every batch carries all page types, assets merge after

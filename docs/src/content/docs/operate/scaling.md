@@ -30,7 +30,7 @@ Catalog-wide builds (`--all`, `--chunk`, `--chunk-size`, `--since`) stream the C
 
 Two things to know:
 
-- On the framework backends (Next.js, Astro, SvelteKit, Nuxt) streaming needs a batch size (`render.batchSize` or `--batch-size`); without one the whole scope goes to a single framework build and is held in memory for it.
+- On the framework backends (Next.js, Astro, SvelteKit, Nuxt) a window is one framework build of at most `render.batchSize` pages (default 5000, or `--batch-size`). A scope that fits in one batch, such as a published article and its listings, is still exactly one framework build.
 - The manifest is checkpointed after every window, so a crashed first build resumes where it stopped when you rerun the same command.
 
 ## Phase 1: the first full build
@@ -62,7 +62,7 @@ jobs:
 
 Sizing chunks: aim for jobs of 30 to 90 minutes. A 1M-page catalog at ~200 pages/s per job (CMS-bound, conservative) is ~85 minutes across 10 jobs. On delegated backends (Next/Astro), remember each chunk run also pays one framework build; the chunk count matters less than keeping each framework build's page count in the tens of thousands.
 
-**Framework backends: batch the framework build.** By default the whole scope goes through one `next build`, `astro build`, `vite build` (SvelteKit) or `nuxi generate`, which gets slow and memory-hungry far before 100k pages. Set a batch size and hybld runs several smaller framework builds in one command, merging each as it finishes:
+**Framework backends: batch the framework build.** A scope larger than `render.batchSize` (default 5000) is split across several `next build`, `astro build`, `vite build` (SvelteKit) or `nuxi generate` runs in one command, each merged as it finishes. Tune the size to what your framework handles comfortably:
 
 ```bash
 hybld build --all --batch-size 5000
@@ -113,6 +113,8 @@ hybld build --stale --chunk-size 50000
 # then reclaim superseded assets
 hybld assets gc
 ```
+
+A `--stale` run picks the cheaper way to reach the CMS on its own: when many pages are stale it walks the listing (about one request per 100 articles), and when only a few are left it fetches those by id.
 
 At 1M pages and 50k/night, full convergence takes 20 nights while the site stays consistent throughout, or run bigger chunks on quiet hours. Users see the new code on rebuilt pages first; unchanged pages keep the old (still-deployed) assets until their turn.
 

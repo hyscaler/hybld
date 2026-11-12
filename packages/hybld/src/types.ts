@@ -178,7 +178,7 @@ export interface HybldConfig {
     /**
      * Delegated backends (Next.js, Astro) only: split a large scope into
      * framework builds of at most this many pages, checkpointing the manifest
-     * between them. Default: the whole scope in one framework build.
+     * between them. Default 5000.
      */
     batchSize?: number;
   };
