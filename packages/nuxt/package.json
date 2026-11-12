@@ -4,14 +4,14 @@
   "description": "Nuxt render backend, module and composable for hybld (scoped build and merge)",
   "author": "HyScaler",
   "license": "MIT",
-  "homepage": "https://github.com/MdMotahir/hybld/tree/development/packages/nuxt#readme",
+  "homepage": "https://github.com/hyscaler/hybld/tree/development/packages/nuxt#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MdMotahir/hybld.git",
+    "url": "git+https://github.com/hyscaler/hybld.git",
     "directory": "packages/nuxt"
   },
   "bugs": {
-    "url": "https://github.com/MdMotahir/hybld/issues"
+    "url": "https://github.com/hyscaler/hybld/issues"
   },
   "keywords": [
     "hybld",

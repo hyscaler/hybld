@@ -4,14 +4,14 @@
   "description": "Incremental and selective static builds for CMS-backed sites on React + Vite, Next.js, Astro, SvelteKit and Nuxt",
   "author": "HyScaler",
   "license": "MIT",
-  "homepage": "https://github.com/MdMotahir/hybld/tree/development/packages/hybld#readme",
+  "homepage": "https://github.com/hyscaler/hybld/tree/development/packages/hybld#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MdMotahir/hybld.git",
+    "url": "git+https://github.com/hyscaler/hybld.git",
     "directory": "packages/hybld"
   },
   "bugs": {
-    "url": "https://github.com/MdMotahir/hybld/issues"
+    "url": "https://github.com/hyscaler/hybld/issues"
   },
   "keywords": [
     "static-site-generator",

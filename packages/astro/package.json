@@ -4,14 +4,14 @@
   "description": "Astro render backend and helpers for hybld (scoped build and merge)",
   "author": "HyScaler",
   "license": "MIT",
-  "homepage": "https://github.com/MdMotahir/hybld/tree/development/packages/astro#readme",
+  "homepage": "https://github.com/hyscaler/hybld/tree/development/packages/astro#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MdMotahir/hybld.git",
+    "url": "git+https://github.com/hyscaler/hybld.git",
     "directory": "packages/astro"
   },
   "bugs": {
-    "url": "https://github.com/MdMotahir/hybld/issues"
+    "url": "https://github.com/hyscaler/hybld/issues"
   },
   "keywords": [
     "hybld",

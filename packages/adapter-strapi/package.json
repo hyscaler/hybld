@@ -4,14 +4,14 @@
   "description": "Strapi (v4/v5) REST adapter preset for hybld",
   "author": "HyScaler",
   "license": "MIT",
-  "homepage": "https://github.com/MdMotahir/hybld/tree/development/packages/adapter-strapi#readme",
+  "homepage": "https://github.com/hyscaler/hybld/tree/development/packages/adapter-strapi#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MdMotahir/hybld.git",
+    "url": "git+https://github.com/hyscaler/hybld.git",
     "directory": "packages/adapter-strapi"
   },
   "bugs": {
-    "url": "https://github.com/MdMotahir/hybld/issues"
+    "url": "https://github.com/hyscaler/hybld/issues"
   },
   "keywords": [
     "hybld",

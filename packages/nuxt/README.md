@@ -118,7 +118,7 @@ Nuxt's static pages (those without route params) and its `200.html` and `404.htm
 - Use trailing-slash routes in `route()` (`/articles/x/`); they map to `articles/x/index.html`, which is what Nuxt writes.
 - Deploy `site/`, never `.output/public/`. The latter holds only the last run's pages.
 - A `nuxi generate` takes several seconds even for one page, so each incremental run costs roughly that. Batch several publishes into one run where you can; `hybld serve` coalesces queued webhook requests for you.
-- Large first builds: use `hybld build --all --batch-size 5000`; see [Scaling](https://github.com/MdMotahir/hybld/blob/development/docs/src/content/docs/operate/scaling.md).
+- Large first builds: use `hybld build --all --batch-size 5000`; see [Scaling](https://github.com/hyscaler/hybld/blob/development/docs/src/content/docs/operate/scaling.md).
 - Draft previews (`hybld preview`) are static snapshots on this backend: page scripts are removed, because the Vue router does not know the `/_preview/...` URL.
 - If you change `app.buildAssetsDir`, pass the same value as `nuxtRenderer({ buildAssetsDir })`.
 - Do not import `@hybld/nuxt/server` from components. It is server-only; `useHybldData` is the way in.

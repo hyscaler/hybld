@@ -4,14 +4,14 @@
   "description": "Contentful Delivery API adapter preset for hybld",
   "author": "HyScaler",
   "license": "MIT",
-  "homepage": "https://github.com/MdMotahir/hybld/tree/development/packages/adapter-contentful#readme",
+  "homepage": "https://github.com/hyscaler/hybld/tree/development/packages/adapter-contentful#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MdMotahir/hybld.git",
+    "url": "git+https://github.com/hyscaler/hybld.git",
     "directory": "packages/adapter-contentful"
   },
   "bugs": {
-    "url": "https://github.com/MdMotahir/hybld/issues"
+    "url": "https://github.com/hyscaler/hybld/issues"
   },
   "keywords": [
     "hybld",

@@ -131,7 +131,7 @@ Client-side navigation keeps working across builds: each page's `__data.json` tr
 - `trailingSlash = "always"` is required. Without it pages are emitted as `route.html` and client navigation data lands in a different place.
 - Keep `prerender.crawl` off during hybld runs (the `HYBLD_INTERNAL` check above). Forgetting it does not break output, but every run then rebuilds everything the home page links to.
 - Deploy `site/`, never `build/`. `build/` holds only the last run's pages.
-- Large first builds: use `hybld build --all --batch-size 5000` so each `vite build` stays small; see [Scaling](https://github.com/MdMotahir/hybld/blob/development/docs/src/content/docs/operate/scaling.md).
+- Large first builds: use `hybld build --all --batch-size 5000` so each `vite build` stays small; see [Scaling](https://github.com/hyscaler/hybld/blob/development/docs/src/content/docs/operate/scaling.md).
 - Draft previews (`hybld preview`) are static snapshots on this backend: page scripts are removed, because the SvelteKit router does not know the `/_preview/...` URL.
 - `kit.version` polling is not needed. If you enable it, a new build makes old pages do a full-page navigation on their next link click, which is harmless.
 
