@@ -1,7 +1,7 @@
 {
   "name": "hybld",
   "version": "1.1.0",
-  "description": "Incremental and selective static builds for React + Vite projects backed by a headless CMS",
+  "description": "Incremental and selective static builds for CMS-backed sites on React + Vite, Next.js, Astro, SvelteKit and Nuxt",
   "author": "HyScaler",
   "license": "MIT",
   "homepage": "https://github.com/MdMotahir/hybld/tree/development/packages/hybld#readme",
@@ -25,7 +25,9 @@
     "astro",
     "jamstack",
     "incremental",
-    "wordpress"
+    "wordpress",
+    "sveltekit",
+    "nuxt"
   ],
   "type": "module",
   "sideEffects": false,
@@ -81,6 +83,15 @@
     "sharp": "^0.34.0"
   },
   "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    },
+    "vite": {
+      "optional": true
+    },
     "sharp": {
       "optional": true
     }

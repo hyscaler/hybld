@@ -24,6 +24,8 @@ E2e test apps that depend on the **local workspace packages** (`workspace:*`) an
 | `next-demo` | Next.js App Router backend |
 | `nextpages-demo` | Next.js **Pages Router** (the only e2e for `_next/data` buildId fan-out) |
 | `astro-demo` | Astro backend |
+| `sveltekit-demo` | SvelteKit backend (adapter-static) |
+| `nuxt-demo` | Nuxt backend (module and `useHybldData`) |
 
 Run a demo: start the mock CMS first (`cd demo-site && node mock-cms/server.mjs`), then `npx hybld build --all` in the demo's folder.
 

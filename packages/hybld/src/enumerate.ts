@@ -9,6 +9,8 @@ export interface EnumeratedJob {
   id?: string | null;
   item?: any;
   page?: number;
+  /** Language versions of the page, when the collection defines `alternates`. */
+  alternates?: Array<{ lang: string; route: string }>;
 }
 
 function isCollection(name: string, page: any): boolean {

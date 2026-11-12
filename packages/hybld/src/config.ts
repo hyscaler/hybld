@@ -88,6 +88,8 @@ export function validateConfig(raw: HybldConfig, configDir: string, configFile?:
     outDir: resolve(root, raw.outDir ?? "dist"),
     basePath: raw.basePath ?? "/",
     manifest: resolve(root, raw.manifest ?? ".hybld/manifest.db"),
+    manifestBackup:
+      raw.manifestBackup === false ? null : { everyMinutes: Math.max(0, raw.manifestBackup?.everyMinutes ?? 60) },
     render: {
       entry: resolve(root, raw.render?.entry ?? "src/entry-server.tsx"),
       template: resolve(root, raw.render?.template ?? "index.html"),

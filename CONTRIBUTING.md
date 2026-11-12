@@ -13,9 +13,9 @@ pnpm test          # builds, then runs all test suites
 ## Repository layout
 
 - `packages/hybld`: core engine (manifest, scopes, dependents, renderer, serve, CLI)
-- `packages/next`, `packages/astro`: delegated framework backends
+- `packages/next`, `packages/astro`, `packages/sveltekit`, `packages/nuxt`: delegated framework backends
 - `packages/adapter-*`: CMS presets
-- `examples/`: three starters on the published packages against a live public API, and four internal demos on workspace code against the mock CMS (`cd examples/demo-site && node mock-cms/server.mjs`, port 4399); see `examples/README.md`
+- `examples/`: three starters on the published packages against a live public API, and six internal demos on workspace code against the mock CMS (`cd examples/demo-site && node mock-cms/server.mjs`, port 4399); see `examples/README.md`
 - `docs/`: documentation site (Astro Starlight; `cd docs && npm install && npm run build`)
 
 ## Making changes
@@ -27,7 +27,7 @@ pnpm test          # builds, then runs all test suites
 
 ## Releasing (maintainers)
 
-All seven packages version together. The flow used for every release so far:
+All nine packages version together. The flow used for every release so far:
 
 1. Set the same new version in every `packages/*/package.json`.
 2. Add a dated section to `CHANGELOG.md` describing the release.

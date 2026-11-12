@@ -164,7 +164,7 @@ At scale this backend is the fastest option by far: no framework build per batch
 
 ## Draft previews
 
-`hybld preview --slugs my-draft` renders unpublished content (via the adapter's `getPreview`, e.g. WordPress `status=any` with auth) to `outDir/_preview/...` with a noindex meta tag, without touching the manifest, sitemap, or published pages. Owned-backend exclusive. Wire it to a CMS "preview" button via `hybld serve`'s `POST /rebuild` or your own endpoint calling `builder.preview()`.
+`hybld preview --slugs my-draft` renders unpublished content (via the adapter's `getPreview`, e.g. WordPress `status=any` with auth) to `outDir/_preview/...` with a noindex meta tag, without touching the manifest, sitemap, or published pages. On this backend the preview is a normal hydrated page; the framework backends produce static snapshots instead. Wire it to a CMS "preview" button via `hybld serve`'s `POST /rebuild` or your own endpoint calling `builder.preview()`.
 
 ## Vite plugin mode (optional)
 

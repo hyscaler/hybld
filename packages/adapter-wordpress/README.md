@@ -104,7 +104,7 @@ Header: x-hybld-secret: <secret>
 Body: { "post_id": 123 }        # also accepts post.ID / id shapes
 ```
 
-**Draft previews.** `hybld preview --slugs my-draft` renders the draft to a noindexed `/_preview/` path (React + Vite backend). The preview fetch uses `status=any`, so `auth` must be set.
+**Draft previews.** `hybld preview --slugs my-draft` renders the draft to a noindexed `/_preview/` path (a script-free snapshot on the Next.js, SvelteKit and Nuxt backends). The preview fetch uses `status=any`, so `auth` must be set.
 
 **CMS-hosted images.** Combine with hybld's `images: { origins: ["https://cms.example.com"] }` so article images are downloaded into the output and rewritten instead of hotlinking WordPress.
 

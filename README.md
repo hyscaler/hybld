@@ -1,6 +1,6 @@
 # hybld
 
-Incremental and selective static builds for React + Vite, Next.js, and Astro projects backed by a headless CMS. Publish one article; rebuild one page and its listings, not the site.
+Incremental and selective static builds for React + Vite, Next.js, Astro, SvelteKit and Nuxt projects backed by a headless CMS. Publish one article; rebuild one page and its listings, not the site.
 
 **Documentation is a Starlight site in [`docs/`](./docs/)**: getting started, concepts, configuration and CLI references, per-framework guides, adapters, deployment, scaling to large catalogs, the programmatic API, backend authoring, and troubleshooting. Run it locally with `cd docs && npm install && npm run dev`, or read the markdown sources directly in `docs/src/content/docs/`. The original design documents are kept in `docs/history/` for context; they are not maintained.
 
@@ -28,6 +28,8 @@ Each starter's README explains the handful of files that make up the whole integ
 | `packages/hybld` | Engine: CLI, programmatic API, render backends, SQLite manifest, adapter helpers, serve/sync tooling, Vite plugin. |
 | `packages/next` | `@hybld/next`: Next.js backend (static export) plus `hybldParams`/`hybldData` helpers. |
 | `packages/astro` | `@hybld/astro`: Astro backend plus `hybldPaths`/`hybldData` helpers. |
+| `packages/sveltekit` | `@hybld/sveltekit`: SvelteKit backend (adapter-static) plus `hybldEntries`/`hybldData` helpers. |
+| `packages/nuxt` | `@hybld/nuxt`: Nuxt backend, a Nuxt module and the `useHybldData` composable. |
 | `packages/adapter-wordpress` | WordPress REST preset (previews, trash-driven deletions). |
 | `packages/adapter-strapi` | Strapi v4/v5 preset. |
 | `packages/adapter-contentful` | Contentful Delivery API preset. |
@@ -39,12 +41,14 @@ Each starter's README explains the handful of files that make up the whole integ
 | `examples/next-demo` | Internal e2e fixture: Next.js App Router (`output: "export"`). |
 | `examples/nextpages-demo` | Internal e2e fixture: Next.js Pages Router (the only `_next/data` fan-out e2e). |
 | `examples/astro-demo` | Internal e2e fixture: Astro. |
+| `examples/sveltekit-demo` | Internal e2e fixture: SvelteKit. |
+| `examples/nuxt-demo` | Internal e2e fixture: Nuxt. |
 
 ## Two rendering strategies
 
 **Owned (react-vite, the default)**: hybld runs the Vite client + SSR builds and renders every page itself. Warm single-page rebuilds in milliseconds; hybld controls head tags, hydration payloads, and previews.
 
-**Delegated (next, astro)**: hybld computes what changed, writes the scope to `.hybld/scope.ndjson`, runs the framework's own build (whose dynamic routes read the scope through the helper packages), then merges the emitted pages and hashed assets into its cumulative output dir. Each incremental run costs one framework build (Astro ~1s, Next ~5s in the demos), still nothing like a full rebuild at scale. The framework owns head tags and its 404 page; draft previews are react-vite only; every batch carries all singleton pages plus at least one page per dynamic route type (Next's export refuses an empty `generateStaticParams`).
+**Delegated (next, astro, sveltekit, nuxt)**: hybld computes what changed, writes the scope to `.hybld/scope.ndjson`, runs the framework's own build (whose dynamic routes read the scope through the helper packages), then merges the emitted pages and hashed assets into its cumulative output dir. Each incremental run costs one framework build (Astro ~1s, Next ~5s in the demos), still nothing like a full rebuild at scale. The framework owns head tags and its 404 page; draft previews are react-vite only; every batch carries all singleton pages plus at least one page per dynamic route type (Next's export refuses an empty `generateStaticParams`).
 
 Next backend requirements: `output: "export"`, `trailingSlash: true`, `serverExternalPackages: ["hybld", "@hybld/next", "jiti"]` in next.config, and a plain `.mjs` hybld config (it is also loaded inside Next build workers, where TypeScript configs cannot be imported). Sites served by a Next server should prefer Next's native ISR; this backend targets static hosting, where Next has no incremental story. See `examples/starter-next` and `examples/starter-astro` for complete working setups.
 
@@ -126,12 +130,9 @@ pnpm add -D hybld @hybld/adapter-wordpress
 
 Next.js and Astro projects follow the same shape through their helper packages; copy `examples/starter-next` or `examples/starter-astro` as a base.
 
-## i18n pattern
+## Multi-language sites
 
-Multi-locale sites need no special core support: put the locale in your route
-functions (`route: (a) => '/' + a.lang + '/articles/' + a.slug + '/'`), filter
-or fan out per locale in your adapter/data loaders, and emit hreflang tags from
-your `entry-server` head. Each locale's pages are just more routes in the manifest.
+Each language version is an ordinary page: put the locale in your route function (`route: (a) => '/' + a.lang + '/articles/' + a.slug + '/'`). Add `alternates: (a) => [{ lang, route }, ...]` to the collection to tell hybld which pages are translations of each other; it then writes hreflang links into the sitemap, hands the list to your renderer for head tags, and rebuilds the existing versions when a new translation appears.
 
 ## License
 

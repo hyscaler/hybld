@@ -23,7 +23,8 @@ export function writeSitemap(
     shards.push(
       rows.slice(i, i + SHARD_SIZE).map((r) => {
         const lastmod = (r.cmsModifiedAt ?? r.builtAt).slice(0, 10);
-        return `  <url><loc>${base}${escapeXml(r.route)}</loc><lastmod>${lastmod}</lastmod></url>`;
+        const links = alternateLinks(r.alternatesRef, base);
+        return `  <url><loc>${base}${escapeXml(r.route)}</loc><lastmod>${lastmod}</lastmod>${links}</url>`;
       })
     );
   }
@@ -31,7 +32,10 @@ export function writeSitemap(
   const written: string[] = [];
   shards.forEach((urls, i) => {
     const file = `sitemap-${i}.xml`;
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join("\n")}\n</urlset>\n`;
+    // The xhtml namespace is declared only when a shard carries hreflang
+    // links, so single-language sitemaps stay byte-identical.
+    const ns = urls.some((u) => u.includes("<xhtml:link")) ? ' xmlns:xhtml="http://www.w3.org/1999/xhtml"' : "";
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"${ns}>\n${urls.join("\n")}\n</urlset>\n`;
     if (writer.writeIfChanged(file, xml)) written.push(file);
   });
   // A shrinking catalog leaves shard files beyond the new count; delete them
@@ -50,6 +54,19 @@ export function writeSitemap(
   return written;
 }
 
+/** hreflang alternates for one URL, from the manifest's stored language versions. */
+function alternateLinks(alternatesRef: string | null | undefined, base: string): string {
+  if (!alternatesRef) return "";
+  try {
+    const alts = JSON.parse(alternatesRef) as Array<{ lang: string; route: string }>;
+    return alts
+      .map((a) => `<xhtml:link rel="alternate" hreflang="${escapeXml(a.lang)}" href="${base}${escapeXml(a.route)}"/>`)
+      .join("");
+  } catch {
+    return "";
+  }
+}
+
 function escapeXml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }

@@ -310,7 +310,7 @@ Exit codes: `0` clean, `2` completed with page failures (listed in the JSON summ
 | `astro dev` shows stale config/content | Dev servers cache the catalog config per process; restart. Full enumeration is also memoized for 60s within a build. |
 | Everything rebuilds after every deploy | Rendering code lives outside `sourceDirs`; add the missing directories. |
 | `assets gc` reports nothing to collect | Normal for zero-island sites: no client JS/CSS means no hashed assets to manage. |
-| Draft previews | Not available on this backend (each draft would cost a full Astro build); wire your own draft route. |
+| Draft previews | `hybld preview --slugs my-draft` runs one Astro build and copies only the draft page to `/_preview/...`, noindexed. Scripts and islands are kept. |
 
 ## Migrating an existing Astro site
 

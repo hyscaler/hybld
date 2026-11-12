@@ -55,6 +55,14 @@ export type DependentRef =
   | string
   | { type: string; id?: string | number; depth?: number };
 
+/** One language version of a page. */
+export interface Alternate {
+  /** BCP 47 language tag ("en", "hi", "en-IN") or "x-default". */
+  lang: string;
+  /** Site-relative route of that version. */
+  route: string;
+}
+
 export interface CollectionPageConfig<TArticle = any> {
   /** Marks this page type as adapter-backed (one page per CMS item). The page type named "article" is a collection by default. */
   collection?: boolean;
@@ -63,6 +71,13 @@ export interface CollectionPageConfig<TArticle = any> {
   route: (article: TArticle) => string;
   data: (article: TArticle) => any | Promise<any>;
   dependents?: (article: TArticle) => DependentRef[];
+  /**
+   * Language versions of this page, itself included, for multi-locale sites:
+   * `[{ lang: "en", route: "/en/a/" }, { lang: "hi", route: "/hi/a/" }]`.
+   * Use lang "x-default" for the fallback version. hybld writes them to the
+   * sitemap as hreflang alternates and hands them to the page renderer.
+   */
+  alternates?: (article: TArticle) => Alternate[];
   /** Inverse of route(): resolve a route back to an article ref. Enables serve-mode regeneration on miss. */
   match?: (route: string) => ArticleRef | null;
   /** Extract a stable id from the raw article. Default: article.id */
@@ -121,6 +136,8 @@ export interface RenderJob {
   /** Aggregate pagination info for delegated scope files. */
   item?: any;
   page?: number;
+  /** Language versions of the page (collection pages that define `alternates`). */
+  alternates?: Alternate[];
 }
 
 export type RenderedPage =
@@ -145,6 +162,13 @@ export interface HybldConfig {
   outDir?: string;
   basePath?: string;
   manifest?: string;
+  /**
+   * Snapshot the manifest to `<manifest>.bak` after builds that changed
+   * something, at most once per `everyMinutes` (default 60). A missing or
+   * unreadable manifest is restored from the snapshot automatically. `false`
+   * switches backups off.
+   */
+  manifestBackup?: false | { everyMinutes?: number };
   render?: {
     entry?: string;
     template?: string;
@@ -222,6 +246,7 @@ export interface ResolvedConfig {
   outDir: string;
   basePath: string;
   manifest: string;
+  manifestBackup: { everyMinutes: number } | null;
   render: { entry: string; template: string; workers: number; timeout: number; batchSize?: number };
   cms: { concurrency: number; perPage: number; requestsPerSecond?: number; cache: false | { ttlSeconds: number } };
   pages: HybldConfig["pages"];
@@ -264,6 +289,11 @@ export interface BuildOptions {
   concurrency?: number;
   /** Delegated backends: pages per framework build for this run (overrides render.batchSize). */
   batchSize?: number;
+  /**
+   * Manifest recovery: record pages whose output file already exists as
+   * built, without rendering them. Pages with no output file build normally.
+   */
+  adopt?: boolean;
 }
 
 export interface PageFailure {
@@ -285,6 +315,8 @@ export interface BuildSummary {
   reportPath?: string;
   dryRun?: boolean;
   plannedRoutes?: string[];
+  /** Pages recorded from existing output files during a manifest adopt run. */
+  adopted?: number;
 }
 
 export interface ManifestRow {
@@ -297,6 +329,8 @@ export interface ManifestRow {
   dependentsRef: string | null;
   /** JSON-serialized feed entry ({title, description, date}) captured at build time when the feed is enabled. */
   feedRef: string | null;
+  /** JSON-serialized Alternate[] (language versions), for sitemap hreflang links. */
+  alternatesRef?: string | null;
   contentHash: string | null;
   cmsModifiedAt: string | null;
   builtAt: string;

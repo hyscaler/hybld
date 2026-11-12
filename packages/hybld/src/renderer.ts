@@ -9,6 +9,8 @@ export interface RenderInput {
   route: string;
   pageType: string;
   data: any;
+  /** Language versions of the page (collections that define `alternates`), for hreflang head tags. */
+  alternates?: Array<{ lang: string; route: string }>;
 }
 
 export interface RenderResult {

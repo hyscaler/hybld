@@ -11,6 +11,10 @@ examples/*/site/
 examples/*/out/
 examples/*/.next/
 examples/*/.astro/
+examples/*/build/
+examples/*/.svelte-kit/
+examples/*/.nuxt/
+examples/*/.output/
 examples/*/fake-out/
 examples/*/build-count.txt
 

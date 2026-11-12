@@ -76,6 +76,8 @@ Use `scopedJobs` when the route-listing hook also supplies the page's props (Ast
 
 If the framework bundles server code with webpack (like Next), load it via `import(/* webpackIgnore: true */ "hybld/scope")` so the bundler never processes the graph. Ship the renderer factory on a separate subpath (like `@hybld/next/renderer`) so page code never imports the heavy engine graph.
 
+`delegatedRenderer` also takes `previewScripts: "strip" | "keep"`. Draft previews are served from a URL the framework never built the page for; the default `"strip"` removes page scripts so a client router cannot reject that URL. Set `"keep"` only for frameworks without a client router.
+
 ## Rules learned the hard way
 
 1. **Delegated asset hashes must be source fingerprints.** Hashing build output marks the whole catalog code-stale after every run when the framework emits per-build runtime files (Next's buildId). `recordAssetGraph` unions files per hash for exactly this reason.

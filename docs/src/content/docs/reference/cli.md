@@ -61,7 +61,7 @@ Page counts by type, code-stale count, last build times. `--reconcile` additiona
 
 ## `hybld preview --slugs <s1,s2> | --ids <id1,id2>`
 
-Renders unpublished drafts (via the adapter's `getPreview`, e.g. WordPress `status=any`) to `<outDir>/_preview/...` with a `noindex, nofollow` robots meta tag. Not recorded in the manifest or sitemap. React + Vite backend only; delegated backends error with guidance to use the framework's own draft mode.
+Renders unpublished drafts (via the adapter's `getPreview`, e.g. WordPress `status=any`) to `<outDir>/_preview/...` with a `noindex, nofollow` robots meta tag. Not recorded in the manifest or sitemap. On Next.js, Astro, SvelteKit and Nuxt a preview runs one framework build for the whole request and copies only the draft pages out, under the preview prefix; nothing else from that build is merged. Except on Astro, the snapshot's page scripts are removed, because the framework's client router does not know the `/_preview/...` URL: the preview shows the rendered draft but is not interactive.
 
 ## `hybld serve [--port 4600] [--host 127.0.0.1] [--secret <s>] [--static] [--regen]`
 
@@ -93,6 +93,10 @@ hybld manifest import <file.json>    # JSON -> manifest
 hybld manifest merge <other.db>      # merge another manifest; newest builtAt wins per route
 hybld manifest push --url <url>      # HTTP PUT the .db (S3 presigned URLs work)
 hybld manifest pull --url <url>      # HTTP GET, replacing the local .db
+hybld manifest backup                # write a snapshot to <manifest>.bak now
+hybld manifest adopt                 # rebuild a lost manifest from the existing output
 ```
+
+`manifest adopt` is the recovery path when the manifest is gone and there is no snapshot. It walks the whole catalog like `--all`, but every page whose output file already exists is recorded as built without rendering it; only pages with no file are rendered. It costs the CMS listing, not a full rebuild. It trusts the files on disk, so run a normal `hybld build --stale` afterwards if the site's code changed since they were built. Add `--dry-run` to see what it would do.
 
 Merge is how parallel chunked CI jobs combine their results: each job builds its slice with its own manifest, a final job merges them.

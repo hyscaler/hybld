@@ -5,6 +5,8 @@ allowBuilds:
   esbuild: true
   sharp: true
 minimumReleaseAgeExclude:
+  - '@hybld/sveltekit@1.1.0'
+  - '@hybld/nuxt@1.1.0'
   - '@hybld/adapter-wordpress@1.1.0'
   - '@hybld/astro@1.1.0'
   - '@hybld/next@1.1.0'

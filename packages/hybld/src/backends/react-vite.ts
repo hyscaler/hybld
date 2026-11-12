@@ -48,7 +48,7 @@ class ReactViteBackend implements RenderBackend {
         const job = jobs[i];
         try {
           const html = await this.renderer.renderPage(
-            { route: job.route, pageType: job.pageType, data: job.data },
+            { route: job.route, pageType: job.pageType, data: job.data, alternates: job.alternates },
             { noindex: opts.noindex }
           );
           results[i] = { route: job.route, kind: "html", html };

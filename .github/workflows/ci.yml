@@ -42,6 +42,18 @@ jobs:
           npx hybld build --all
           npx hybld build --since last-build
 
+      - name: E2E smoke (SvelteKit and Nuxt backends against mock CMS)
+        run: |
+          cd examples/demo-site
+          node mock-cms/server.mjs &
+          sleep 1
+          cd ../sveltekit-demo
+          npx hybld build --all --batch-size 40
+          npx hybld build --since last-build
+          cd ../nuxt-demo
+          npx hybld build --all
+          npx hybld build --since last-build
+
   docs:
     runs-on: ubuntu-latest
     steps:

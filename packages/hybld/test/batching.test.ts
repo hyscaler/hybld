@@ -212,3 +212,212 @@ describe("image optimization (images.optimize)", () => {
     ).toThrow(/images.optimize.quality/);
   });
 });
+
+describe("language alternates (i18n)", () => {
+  it("writes hreflang links to the sitemap, passes alternates to the renderer, and rebuilds when a translation appears", async () => {
+    const root = mkdtempSync(join(tmpdir(), "hybld-i18n-"));
+    mkdirSync(join(root, "src"));
+    writeFileSync(join(root, "src", "app.js"), "// app");
+    writeFileSync(join(root, "fake-build.mjs"), FAKE_BUILD);
+    const posts: any[] = [
+      { id: "en-1", slug: "hello", lang: "en", group: "g1", title: "Hello" },
+      { id: "hi-1", slug: "namaste", lang: "hi", group: "g1", title: "Namaste" },
+      { id: "en-2", slug: "solo", lang: "en", group: "g2", title: "Solo" },
+    ];
+    const routeOf = (a: any) => `/${a.lang}/${a.slug}/`;
+    const make = () =>
+      new Builder(
+        validateConfig(
+          {
+            adapter: memoryAdapter(posts),
+            renderer: delegatedRenderer({
+              name: "fake",
+              buildCommand: [process.execPath, "fake-build.mjs"],
+              frameworkOutDir: "fake-out",
+              sourceDirs: ["src"],
+              assetDirs: ["fake-assets"],
+              pageFileCandidates: (route: string) => [`${route.replace(/^\/+/, "").replace(/\/+$/, "")}/index.html`],
+            }),
+            outDir: "site",
+            manifest: ".hybld/manifest.db",
+            sitemap: { enabled: true, baseUrl: "https://example.test" },
+            pages: {
+              article: {
+                route: routeOf,
+                data: (a: any) => ({ title: a.title }),
+                alternates: (a: any) => {
+                  const versions = posts.filter((p) => p.group === a.group);
+                  return versions.length > 1 ? versions.map((p) => ({ lang: p.lang, route: routeOf(p) })) : [];
+                },
+              },
+            },
+          } as any,
+          root
+        )
+      );
+
+    const b1 = make();
+    const first = await b1.build({ all: true });
+    await b1.close();
+    expect(first.failed).toEqual([]);
+
+    const sitemap = readFileSync(join(root, "site/sitemap-0.xml"), "utf8");
+    expect(sitemap).toContain('xmlns:xhtml="http://www.w3.org/1999/xhtml"');
+    expect(sitemap).toContain('<xhtml:link rel="alternate" hreflang="hi" href="https://example.test/hi/namaste/"/>');
+    expect(sitemap).toContain('<xhtml:link rel="alternate" hreflang="en" href="https://example.test/en/hello/"/>');
+    // A page with a single language version carries no alternates.
+    expect(sitemap).toMatch(/<loc>https:\/\/example\.test\/en\/solo\/<\/loc><lastmod>[^<]+<\/lastmod><\/url>/);
+    // The framework build received the alternates in its scope file.
+    const scope = readFileSync(join(root, ".hybld/scope.ndjson"), "utf8").split("\n").map((l) => JSON.parse(l));
+    expect(scope.find((j) => j.route === "/en/hello/").alternates).toEqual([
+      { lang: "en", route: "/en/hello/" },
+      { lang: "hi", route: "/hi/namaste/" },
+    ]);
+
+    // A new translation of "solo" changes that page's alternates: it rebuilds
+    // although its own data did not change.
+    posts.push({ id: "hi-2", slug: "akela", lang: "hi", group: "g2", title: "Akela" });
+    const b2 = make();
+    const second = await b2.build({ all: true });
+    await b2.close();
+    expect(second.built.sort()).toEqual(["/en/solo/", "/hi/akela/"]);
+  });
+});
+
+describe("manifest backup, restore and adopt", () => {
+  it("snapshots after a build, restores a lost or corrupt manifest, and adopts existing output", async () => {
+    const p = project();
+    const manifest = join(p.root, ".hybld/manifest.db");
+    const b1 = p.make();
+    await b1.build({ all: true });
+    await b1.close();
+    expect(existsSync(`${manifest}.bak`)).toBe(true);
+    const builds = p.builds();
+
+    // Lost manifest: the snapshot comes back and nothing is rebuilt.
+    for (const f of [manifest, `${manifest}-wal`, `${manifest}-shm`]) rmSync(f, { force: true });
+    const b2 = p.make();
+    const afterLoss = await b2.build({ all: true });
+    await b2.close();
+    expect(afterLoss.built).toEqual([]);
+    expect(p.builds()).toBe(builds);
+
+    // Corrupt manifest: same, and the bad file is kept aside.
+    for (const f of [`${manifest}-wal`, `${manifest}-shm`]) rmSync(f, { force: true });
+    writeFileSync(manifest, "this is not a database");
+    const b3 = p.make();
+    const afterCorrupt = await b3.build({ all: true });
+    await b3.close();
+    expect(afterCorrupt.built).toEqual([]);
+    expect(readdirSync(join(p.root, ".hybld")).some((f) => f.startsWith("manifest.db.corrupt-"))).toBe(true);
+
+    // No manifest and no snapshot: adopt records the pages already on disk
+    // and renders only the one whose file is gone.
+    rmSync(join(p.root, ".hybld"), { recursive: true, force: true });
+    rmSync(join(p.root, "site/articles/a4"), { recursive: true, force: true });
+    const b4 = p.make();
+    const adopted = await b4.build({ all: true, adopt: true });
+    await b4.close();
+    expect(adopted.failed).toEqual([]);
+    expect(adopted.adopted).toBe(7); // 6 articles + the author page
+    expect(adopted.built).toEqual(["/articles/a4/"]);
+    expect(existsSync(join(p.root, "site/articles/a4/index.html"))).toBe(true);
+
+    // The adopted manifest is a normal one: the next run skips everything.
+    const b5 = p.make();
+    const next = await b5.build({ all: true });
+    await b5.close();
+    expect(next.built).toEqual([]);
+  });
+
+  it("manifestBackup: false writes no snapshot", async () => {
+    const root = mkdtempSync(join(tmpdir(), "hybld-nobak-"));
+    mkdirSync(join(root, "src"));
+    writeFileSync(join(root, "src", "app.js"), "// app");
+    writeFileSync(join(root, "fake-build.mjs"), FAKE_BUILD);
+    const b = new Builder(
+      validateConfig(
+        {
+          adapter: memoryAdapter([{ id: 1, slug: "a", title: "A" }]),
+          renderer: delegatedRenderer({
+            name: "fake",
+            buildCommand: [process.execPath, "fake-build.mjs"],
+            frameworkOutDir: "fake-out",
+            sourceDirs: ["src"],
+            assetDirs: ["fake-assets"],
+            pageFileCandidates: (route: string) => [`${route.replace(/^\/+/, "").replace(/\/+$/, "")}/index.html`],
+          }),
+          outDir: "site",
+          manifest: ".hybld/manifest.db",
+          manifestBackup: false,
+          pages: { article: { route: (a: any) => `/articles/${a.slug}/`, data: (a: any) => ({ title: a.title }) } },
+        } as any,
+        root
+      )
+    );
+    await b.build({ all: true });
+    await b.close();
+    expect(existsSync(join(root, ".hybld/manifest.db.bak"))).toBe(false);
+  });
+});
+
+describe("delegated draft previews", () => {
+  it("writes a script-free noindex snapshot under the preview prefix and leaves the live site and manifest alone", async () => {
+    const root = mkdtempSync(join(tmpdir(), "hybld-preview-"));
+    mkdirSync(join(root, "src"));
+    writeFileSync(join(root, "src", "app.js"), "// app");
+    // Like FAKE_BUILD, but every page carries a script and a JSON-LD block.
+    writeFileSync(
+      join(root, "fake-build.mjs"),
+      FAKE_BUILD.replace(
+        `"<html><body><h1>" + job.data.title + "</h1></body></html>"`,
+        `"<html><head><title>t</title><link rel=\\"modulepreload\\" href=\\"/x.js\\"></head><body><h1>" + job.data.title + "</h1><script type=\\"application/ld+json\\">{}</script><script src=\\"/app.js\\"></script></body></html>"`
+      )
+    );
+    const published = [{ id: 1, slug: "live", title: "Live" }];
+    const adapter: CmsAdapter = {
+      ...memoryAdapter(published),
+      getPreview: async (ref) => (ref.slug === "draft" ? { id: 99, slug: "draft", title: "Draft Title" } : null),
+    };
+    const make = () =>
+      new Builder(
+        validateConfig(
+          {
+            adapter,
+            renderer: delegatedRenderer({
+              name: "fake",
+              buildCommand: [process.execPath, "fake-build.mjs"],
+              frameworkOutDir: "fake-out",
+              sourceDirs: ["src"],
+              assetDirs: ["fake-assets"],
+              pageFileCandidates: (route: string) => [`${route.replace(/^\/+/, "").replace(/\/+$/, "")}/index.html`],
+            }),
+            outDir: "site",
+            manifest: ".hybld/manifest.db",
+            pages: { article: { route: (a: any) => `/articles/${a.slug}/`, data: (a: any) => ({ title: a.title }) } },
+          } as any,
+          root
+        )
+      );
+    const b1 = make();
+    await b1.build({ all: true });
+    await b1.close();
+
+    const b2 = make();
+    const result = await b2.preview({ slugs: ["draft"] });
+    const status = await b2.status();
+    await b2.close();
+
+    expect(result.failed).toEqual([]);
+    expect(result.built.map((x) => x.route)).toEqual(["/_preview/articles/draft/"]);
+    const html = readFileSync(join(root, "site/_preview/articles/draft/index.html"), "utf8");
+    expect(html).toContain("Draft Title");
+    expect(html).toContain('<meta name="robots" content="noindex, nofollow">');
+    expect(html).not.toContain("/app.js");
+    expect(html).not.toContain("modulepreload");
+    expect(html).toContain("application/ld+json"); // structured data stays
+    // The draft never reached the live tree or the manifest.
+    expect(existsSync(join(root, "site/articles/draft"))).toBe(false);
+    expect(status.totalPages).toBe(1 + 1); // the article plus the framework's static home
+  });
+});

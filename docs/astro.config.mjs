@@ -13,7 +13,7 @@ export default defineConfig({
     starlight({
       title: "hybld",
       description:
-        "Documentation for hybld: incremental static builds for React + Vite, Next.js, and Astro sites backed by a headless CMS. Build one page, not a million.",
+        "Documentation for hybld: incremental static builds for React + Vite, Next.js, Astro, SvelteKit and Nuxt sites backed by a headless CMS. Build one page, not a million.",
       logo: { src: "./src/assets/logo.svg", alt: "hybld" },
       favicon: "/favicon.svg",
       customCss: ["./src/styles/brand.css"],

@@ -16,6 +16,7 @@ export { syncOutput, pushManifest, pullManifest, type SyncOptions, type SyncResu
 export { ImageLocalizer } from "./images.js";
 export { writeFeed } from "./feed.js";
 export type {
+  Alternate,
   AggregatePageConfig,
   ArticleRef,
   BuildOptions,

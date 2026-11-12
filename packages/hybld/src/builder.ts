@@ -6,7 +6,7 @@ import { createCmsHelper } from "./cms-helper.js";
 import { writeFeed } from "./feed.js";
 import { ImageLocalizer } from "./images.js";
 import { BuildLock } from "./lock.js";
-import { Manifest } from "./manifest.js";
+import { Manifest, restoreManifestIfLost } from "./manifest.js";
 import { OutputWriter, routeToOutputPath } from "./output.js";
 import { Redirects } from "./redirects.js";
 import { writeSitemap } from "./sitemap.js";
@@ -14,6 +14,7 @@ import { DelegatedBackend } from "./backends/delegated.js";
 import { reactVite } from "./backends/react-vite.js";
 import type {
   AggregatePageConfig,
+  Alternate,
   BuildOptions,
   BuildSummary,
   CmsAdapter,
@@ -67,6 +68,7 @@ interface EvaluatedJob {
   sourceRef: string | null;
   dependentsRef: string | null;
   feedRef: string | null;
+  alternatesRef: string | null;
 }
 
 export interface CreateBuilderOptions {
@@ -98,6 +100,16 @@ export class Builder {
     public readonly config: ResolvedConfig,
     opts: CreateBuilderOptions = {}
   ) {
+    // A lost or unreadable manifest would otherwise mean rebuilding the whole
+    // site; fall back to the last backup snapshot and say so loudly.
+    const restored = config.manifestBackup ? restoreManifestIfLost(config.manifest) : null;
+    if (restored) {
+      console.warn(
+        `hybld: the manifest was ${restored}; restored it from ${config.manifest}.bak. ` +
+          `Pages built after that snapshot are picked up again by the next "--since last-build" run. ` +
+          `(To start from an empty manifest instead, delete the .bak file too.)`
+      );
+    }
     this.manifest = new Manifest(config.manifest);
     this.backend = (config.renderer ?? reactVite()).create(config, { externalClientBuild: opts.externalClientBuild });
     this.lock = new BuildLock(join(dirname(config.manifest), "build.lock"));
@@ -261,40 +273,7 @@ export class Builder {
           }
         }
         const presentTypes = new Set(allJobs.map((j) => (j.kind === "article" ? j.collectionType : j.pageType)));
-        for (const [name] of this.collections()) {
-          if (presentTypes.has(name)) continue;
-          // Prefer an already-built page; on a fresh manifest (first chunked or
-          // targeted build) fall back to one live item so Next's export never
-          // sees an empty generateStaticParams.
-          const row = this.manifest.firstRowOfType(name);
-          let article = row?.articleId ? await this.adapterFor(name).getArticle({ id: row.articleId }) : null;
-          if (!article) {
-            const res = await this.adapterFor(name).listArticles({ page: 1, perPage: 1 });
-            article = res.items[0] ?? null;
-          }
-          if (article) {
-            allJobs.push({
-              kind: "article",
-              route: this.collectionCfg(name).route(article),
-              article,
-              collectionType: name,
-              forceRender: true,
-            });
-          }
-        }
-        for (const [name, page] of this.aggregateTypes()) {
-          if (!page.enumerate || presentTypes.has(name)) continue;
-          const row = this.manifest.firstRowOfType(name);
-          if (row?.sourceRef) {
-            const ref = JSON.parse(row.sourceRef);
-            allJobs.push({ kind: "aggregate", route: row.route, pageType: name, item: ref.item, page: ref.page, forceRender: true });
-            continue;
-          }
-          const items = await page.enumerate(this.ctx);
-          if (items[0] !== undefined) {
-            allJobs.push({ kind: "aggregate", route: page.route(items[0], 1), pageType: name, item: items[0], page: 1, forceRender: true });
-          }
-        }
+        allJobs.push(...(await this.paddingJobs(presentTypes)));
       }
 
       if (opts.dryRun) {
@@ -353,6 +332,17 @@ export class Builder {
           existing.assetGraphHash === assetHash &&
           existsSync(join(this.config.outDir, existing.outputPath));
         if (fresh) freshSkipped.push(ev);
+        // Manifest recovery: a page with no manifest row whose output file is
+        // already on disk is recorded as built instead of rendered again.
+        if (!fresh && opts.adopt && !existing) {
+          const outputPath = this.existingOutputFor(ev.job.route);
+          if (outputPath) {
+            this.upsertFromEvaluated(ev, assetHash, outputPath);
+            summary.adopted = (summary.adopted ?? 0) + 1;
+            freshSkipped.push(ev);
+            return false;
+          }
+        }
         return !fresh;
       });
       // Delegated: freshness-skipping must not empty a dynamic route type out
@@ -517,7 +507,8 @@ export class Builder {
       // Sitemap and feed derive purely from the page set; skip both when it
       // did not change (all-skip sweeps stay cheap at large catalogs).
       const resumedRun = this.manifest.getMeta("runIncomplete") === "1";
-      const pageSetChanged = resumedRun || summary.built.length + summary.deleted.length + summary.moved.length > 0;
+      const pageSetChanged =
+        resumedRun || (summary.adopted ?? 0) > 0 || summary.built.length + summary.deleted.length + summary.moved.length > 0;
       if (resumedRun) this.manifest.setMeta("runIncomplete", "");
       if (pageSetChanged && this.config.sitemap.enabled) {
         if (!this.config.sitemap.baseUrl) throw new Error("sitemap.baseUrl is required when sitemap.enabled is true");
@@ -564,6 +555,8 @@ export class Builder {
         this.manifest.setMeta("pendingRemovalsToken", "");
       }
 
+      if (pageSetChanged) this.backupManifestIfDue();
+
       if (this.images) writer.created.push(...this.images.drainNewFiles());
       summary.cmsRequests = (this.config.adapter as any).fetcher?.requestCount?.() ?? 0;
       summary.durationMs = Date.now() - t0;
@@ -581,6 +574,79 @@ export class Builder {
     }
   }
 
+  /**
+   * One forced job per dynamic page type missing from a delegated batch:
+   * Next's static export refuses a generateStaticParams that returns nothing.
+   * Prefers an already-built page; on a fresh manifest falls back to one live
+   * item.
+   */
+  private async paddingJobs(presentTypes: Set<string>): Promise<Job[]> {
+    const out: Job[] = [];
+    for (const [name] of this.collections()) {
+      if (presentTypes.has(name)) continue;
+      // Prefer an already-built page; on a fresh manifest (first chunked or
+      // targeted build) fall back to one live item so Next's export never
+      // sees an empty generateStaticParams.
+      const row = this.manifest.firstRowOfType(name);
+      let article = row?.articleId ? await this.adapterFor(name).getArticle({ id: row.articleId }) : null;
+      if (!article) {
+        const res = await this.adapterFor(name).listArticles({ page: 1, perPage: 1 });
+        article = res.items[0] ?? null;
+      }
+      if (article) {
+        out.push({
+          kind: "article",
+          route: this.collectionCfg(name).route(article),
+          article,
+          collectionType: name,
+          forceRender: true,
+        });
+      }
+    }
+    for (const [name, page] of this.aggregateTypes()) {
+      if (!page.enumerate || presentTypes.has(name)) continue;
+      const row = this.manifest.firstRowOfType(name);
+      if (row?.sourceRef) {
+        const ref = JSON.parse(row.sourceRef);
+        out.push({ kind: "aggregate", route: row.route, pageType: name, item: ref.item, page: ref.page, forceRender: true });
+        continue;
+      }
+      const items = await page.enumerate(this.ctx);
+      if (items[0] !== undefined) {
+        out.push({ kind: "aggregate", route: page.route(items[0], 1), pageType: name, item: items[0], page: 1, forceRender: true });
+      }
+    }
+    return out;
+  }
+
+  /** The output file a route already has on disk (relative to outDir), if any. */
+  private existingOutputFor(route: string): string | null {
+    const candidates =
+      this.backend instanceof DelegatedBackend ? this.backend.outputCandidates(route) : [routeToOutputPath(route)];
+    return candidates.find((rel) => existsSync(join(this.config.outDir, rel))) ?? null;
+  }
+
+  /** Snapshot the manifest when backups are on and the last one is old enough. Never fails a build. */
+  private backupManifestIfDue(force = false): string | null {
+    const cfg = this.config.manifestBackup;
+    if (!cfg && !force) return null;
+    const last = Date.parse(this.manifest.getMeta("lastBackupAt") ?? "");
+    const due = force || Number.isNaN(last) || Date.now() - last >= (cfg?.everyMinutes ?? 0) * 60_000;
+    if (!due) return null;
+    try {
+      this.manifest.setMeta("lastBackupAt", new Date().toISOString());
+      return this.manifest.backup();
+    } catch (err: any) {
+      this.log(`manifest backup failed: ${err?.message ?? err}`);
+      return null;
+    }
+  }
+
+  /** Write a manifest snapshot now (`hybld manifest backup`). */
+  backupManifest(): string | null {
+    return this.backupManifestIfDue(true);
+  }
+
   // ---- job evaluation and output -----------------------------------------
 
   private async evaluateJob(job: Job): Promise<EvaluatedJob> {
@@ -591,6 +657,7 @@ export class Builder {
     let sourceRef: string | null = null;
     let dependentsRef: string | null = null;
     let feedRef: string | null = null;
+    let alternates: Alternate[] | undefined;
 
     if (job.kind === "article") {
       const cfg = this.collectionCfg(job.collectionType);
@@ -600,6 +667,8 @@ export class Builder {
       cmsModifiedAt = this.modOf(job.collectionType, job.article);
       const deps = cfg.dependents?.(job.article);
       dependentsRef = deps?.length ? JSON.stringify(deps) : null;
+      const alts = cfg.alternates?.(job.article);
+      if (alts?.length) alternates = alts.map((a) => ({ lang: String(a.lang), route: String(a.route) }));
       if (this.config.feed.enabled) {
         const item = this.config.feed.item ? this.config.feed.item(job.article) : defaultFeedItem(job.article);
         feedRef = JSON.stringify(item);
@@ -610,7 +679,10 @@ export class Builder {
       sourceRef = JSON.stringify({ item: job.item, page: job.page });
     }
 
-    const contentHash = createHash("sha256").update(stableStringify(data)).digest("hex").slice(0, 12);
+    // Alternates feed the page's hreflang tags, so a new translation must
+    // rebuild the page; pages without alternates keep their existing hashes.
+    const hashInput = alternates ? stableStringify({ data, alternates }) : stableStringify(data);
+    const contentHash = createHash("sha256").update(hashInput).digest("hex").slice(0, 12);
     const pageType = job.kind === "article" ? job.collectionType : job.pageType;
     return {
       job,
@@ -621,6 +693,7 @@ export class Builder {
       sourceRef,
       dependentsRef,
       feedRef,
+      alternatesRef: alternates ? JSON.stringify(alternates) : null,
       renderJob: {
         route: job.route,
         pageType,
@@ -630,6 +703,7 @@ export class Builder {
         id: articleId,
         item: job.kind === "aggregate" ? job.item : undefined,
         page: job.kind === "aggregate" ? job.page : undefined,
+        alternates,
       },
     };
   }
@@ -693,6 +767,7 @@ export class Builder {
       sourceRef: existing?.sourceRef ?? null,
       dependentsRef: existing?.dependentsRef ?? null,
       feedRef: existing?.feedRef ?? null,
+      alternatesRef: existing?.alternatesRef ?? null,
       contentHash: createHash("sha256").update(primary).digest("hex").slice(0, 12),
       cmsModifiedAt: existing?.cmsModifiedAt ?? null,
       builtAt: new Date().toISOString(),
@@ -710,6 +785,7 @@ export class Builder {
       sourceRef: ev.sourceRef,
       dependentsRef: ev.dependentsRef,
       feedRef: ev.feedRef,
+      alternatesRef: ev.alternatesRef,
       contentHash: ev.contentHash,
       cmsModifiedAt: ev.cmsModifiedAt,
       builtAt: new Date().toISOString(),
@@ -1084,16 +1160,15 @@ export class Builder {
 
   // ---- auxiliary operations ------------------------------------------------
 
-  /** Draft previews: owned backend only (delegated previews would need a full framework build per draft). */
+  /**
+   * Draft previews. The owned backend renders each draft directly; delegated
+   * backends run one framework build for the whole request (see previewDelegated).
+   */
   async preview(refs: { slugs?: string[]; ids?: Array<string | number> }): Promise<{
     built: Array<{ route: string; file: string }>;
     failed: PageFailure[];
   }> {
-    if (this.backend.mode === "delegated") {
-      throw new Error(
-        `Draft previews are not supported on the ${this.backend.name} backend: each preview would cost a full framework build. Use the framework's own preview/draft mode instead.`
-      );
-    }
+    if (this.backend instanceof DelegatedBackend) return this.previewDelegated(this.backend, refs);
     await this.lock.acquire(this.wait);
     try {
       await this.backend.prepare({ clean: false });
@@ -1131,6 +1206,114 @@ export class Builder {
           failed.push({ route: label, error: err?.message ?? String(err) });
         }
       }
+      return { built, failed };
+    } finally {
+      this.lock.release();
+    }
+  }
+
+  /**
+   * Draft previews on a delegated backend: one framework build renders the
+   * drafts at their normal routes in the framework's staging dir, and only
+   * those pages are copied out, under the preview prefix. Nothing else from
+   * that build is merged and the manifest is not touched, so a draft never
+   * replaces a published page. Because the page now lives at a URL the
+   * framework's client router does not know, its scripts are removed unless
+   * the backend declares them safe to keep: the preview is a static snapshot.
+   */
+  private async previewDelegated(
+    backend: DelegatedBackend,
+    refs: { slugs?: string[]; ids?: Array<string | number> }
+  ): Promise<{ built: Array<{ route: string; file: string }>; failed: PageFailure[] }> {
+    await this.lock.acquire(this.wait);
+    try {
+      await this.images?.init();
+      await backend.prepare({ clean: false });
+      const writer = new OutputWriter(this.config.outDir);
+      const built: Array<{ route: string; file: string }> = [];
+      const failed: PageFailure[] = [];
+      const targets: Array<{ ref: { slug?: string; id?: string | number }; label: string }> = [
+        ...(refs.slugs ?? []).map((s) => ({ ref: { slug: s }, label: `slug:${s}` })),
+        ...(refs.ids ?? []).map((id) => ({ ref: { id }, label: `id:${id}` })),
+      ];
+
+      const drafts: RenderJob[] = [];
+      for (const { ref, label } of targets) {
+        try {
+          const { type, value } = parseTargetRef(String(ref.slug ?? ref.id), this.collections().map(([n]) => n));
+          const adapter = this.adapterFor(type);
+          const fetchOne = adapter.getPreview ?? adapter.getArticle;
+          const article = await fetchOne.call(adapter, ref.slug !== undefined ? { slug: value } : { id: value });
+          if (!article) {
+            failed.push({ route: label, error: "article not found (adapter has no getPreview or the item does not exist)" });
+            continue;
+          }
+          const cfg = this.collectionCfg(type);
+          drafts.push({
+            route: cfg.route(article),
+            pageType: type,
+            data: await cfg.data(article),
+            article,
+            slug: this.slugOf(type, article),
+            id: this.idOf(type, article),
+          });
+        } catch (err: any) {
+          failed.push({ route: label, error: err?.message ?? String(err) });
+        }
+      }
+      if (drafts.length === 0) return { built, failed };
+
+      // Keep every dynamic page type present in the framework build.
+      const padding: RenderJob[] = [];
+      for (const job of await this.paddingJobs(new Set(drafts.map((d) => d.pageType)))) {
+        try {
+          padding.push((await this.evaluateJob(job)).renderJob);
+        } catch {
+          /* a padding page that cannot load is left out; the framework build reports its own error if it needs it */
+        }
+      }
+
+      const draftRoutes = new Set(drafts.map((d) => d.route));
+      const results = await backend.renderBatch([...drafts, ...padding.filter((p) => !draftRoutes.has(p.route))]);
+      const prefix = this.config.preview.pathPrefix.replace(/^\/+|\/+$/g, "");
+      for (const result of results) {
+        if (!draftRoutes.has(result.route) || result.kind === "extra") continue;
+        const previewRoute = `${this.config.preview.pathPrefix}${result.route}`;
+        if (result.kind !== "files") {
+          failed.push({ route: previewRoute, error: result.kind === "failed" ? result.error : "unexpected render result" });
+          continue;
+        }
+        try {
+          for (const file of result.files) {
+            const isHtml = file.relPath.endsWith(".html");
+            // Sidecars (RSC payloads, __data.json) only serve client-side
+            // navigation, which a script-free snapshot does not do.
+            if (!isHtml && !backend.previewKeepsScripts) continue;
+            let content = readFileSync(file.absPath, "utf8");
+            if (isHtml) {
+              content = previewHtml(content, backend.previewKeepsScripts);
+              if (this.images) content = (await this.images.localizeHtml(content)).html;
+            } else if (this.images) {
+              content = this.images.applyKnownMappings(content);
+            }
+            writer.writePage(`${prefix}/${file.relPath}`, content);
+          }
+          built.push({ route: previewRoute, file: join(this.config.outDir, prefix, result.outputPath) });
+        } catch (err: any) {
+          failed.push({ route: previewRoute, error: err?.message ?? String(err) });
+        }
+      }
+
+      // Stylesheets and other hashed assets the preview pages reference.
+      const assets: string[] = [];
+      for (const { absPath, relPath } of backend.stagedAssetFiles()) {
+        assets.push(relPath);
+        const target = join(this.config.outDir, relPath);
+        if (existsSync(target)) continue;
+        mkdirSync(dirname(target), { recursive: true });
+        copyFileSync(absPath, target);
+      }
+      if (assets.length > 0) this.manifest.recordAssetGraph(backend.assetGraphHash, assets);
       return { built, failed };
     } finally {
       this.lock.release();
@@ -1234,6 +1417,7 @@ export class Builder {
 // ---- helpers ---------------------------------------------------------------
 
 function describeMode(opts: BuildOptions): string {
+  if (opts.adopt) return "adopt";
   if (opts.all) return "all";
   if (opts.limit !== undefined) return `limit ${opts.limit}`;
   if (opts.chunk) return `chunk ${opts.chunk.index}/${opts.chunk.total}`;
@@ -1320,4 +1504,22 @@ async function mapLimit<T>(items: T[], limit: number, fn: (item: T) => Promise<v
     }
   });
   await Promise.all(workers);
+}
+
+/**
+ * Turn a framework-built page into a preview snapshot: mark it noindex and,
+ * unless the backend keeps scripts, drop executable scripts and script
+ * preloads (structured-data scripts stay).
+ */
+function previewHtml(html: string, keepScripts: boolean): string {
+  if (!keepScripts) {
+    html = html
+      .replace(/<script\b([^>]*)>[\s\S]*?<\/script>/gi, (tag, attrs: string) =>
+        /type\s*=\s*["']?application\/ld\+json/i.test(attrs) ? tag : ""
+      )
+      .replace(/<link\b[^>]*\brel\s*=\s*["']?modulepreload[^>]*>/gi, "")
+      .replace(/<link\b(?=[^>]*\brel\s*=\s*["']?preload)(?=[^>]*\bas\s*=\s*["']?script)[^>]*>/gi, "");
+  }
+  const robots = '<meta name="robots" content="noindex, nofollow">';
+  return /<head\b[^>]*>/i.test(html) ? html.replace(/<head\b[^>]*>/i, (m) => `${m}${robots}`) : `${robots}${html}`;
 }

@@ -11,6 +11,24 @@ Includes the 1.0.1 pacing fix below, which was never published on its own.
   in one command. Every batch carries all page types, assets merge after
   each batch, and the manifest is checkpointed between batches, so a
   crash late in a long first build resumes instead of starting over.
+- New backend packages: `@hybld/sveltekit` (adapter-static, with
+  `hybldEntries`/`hybldData` for `+page.server.js`) and `@hybld/nuxt` (a
+  Nuxt module plus the `useHybldData` composable). Both support full,
+  incremental and batched builds, and client-side navigation across
+  pages from different builds.
+- Draft previews on the framework backends: `hybld preview` now works on
+  Next.js, Astro, SvelteKit and Nuxt. One framework build renders the
+  drafts and only those pages are copied under the preview prefix; the
+  live site and manifest are untouched. Outside Astro the snapshot's
+  scripts are removed.
+- Multi-language sites: a collection's `alternates` lists the language
+  versions of a page. hybld writes them to the sitemap as hreflang
+  links, passes them to the renderer, and rebuilds existing versions
+  when a translation is added.
+- Manifest safety: automatic snapshots (`manifestBackup`, on by default)
+  with automatic restore of a missing or unreadable manifest, plus
+  `hybld manifest backup` and `hybld manifest adopt`, which rebuilds a
+  lost manifest from the existing output without re-rendering.
 - Image optimization: `images.optimize` caps the width of downloaded
   raster images and re-encodes them (WebP by default) through the
   optional `sharp` package.

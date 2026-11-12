@@ -3,7 +3,19 @@
   "changelog": "@changesets/cli/changelog",
   "commit": false,
   "fixed": [],
-  "linked": [["hybld", "@hybld/next", "@hybld/astro", "@hybld/adapter-wordpress", "@hybld/adapter-strapi", "@hybld/adapter-contentful", "@hybld/adapter-sanity"]],
+  "linked": [
+    [
+      "hybld",
+      "@hybld/next",
+      "@hybld/astro",
+      "@hybld/adapter-wordpress",
+      "@hybld/adapter-strapi",
+      "@hybld/adapter-contentful",
+      "@hybld/adapter-sanity",
+      "@hybld/sveltekit",
+      "@hybld/nuxt"
+    ]
+  ],
   "access": "public",
   "baseBranch": "development",
   "updateInternalDependencies": "patch",

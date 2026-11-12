@@ -53,7 +53,7 @@ jobs:
 
 Sizing chunks: aim for jobs of 30 to 90 minutes. A 1M-page catalog at ~200 pages/s per job (CMS-bound, conservative) is ~85 minutes across 10 jobs. On delegated backends (Next/Astro), remember each chunk run also pays one framework build; the chunk count matters less than keeping each framework build's page count in the tens of thousands.
 
-**Next.js and Astro: batch the framework build.** By default the whole scope goes through one `next build` or `astro build`, which gets slow and memory-hungry far before 100k pages. Set a batch size and hybld runs several smaller framework builds in one command, merging each as it finishes:
+**Framework backends: batch the framework build.** By default the whole scope goes through one `next build`, `astro build`, `vite build` (SvelteKit) or `nuxi generate`, which gets slow and memory-hungry far before 100k pages. Set a batch size and hybld runs several smaller framework builds in one command, merging each as it finishes:
 
 ```bash
 hybld build --all --batch-size 5000
@@ -119,7 +119,7 @@ At 1M pages and 50k/night, full convergence takes 20 nights while the site stays
 
 - **Crash mid-build**: the manifest commits in one transaction per run; a killed process rolls back cleanly and file removals are journaled and replayed on the next run. Just re-run the same command.
 - **Wiped or lost `outDir`**: the manifest notices missing output files and re-renders them on the next relevant build; `hybld build --all` restores everything (renders are cheap; the CMS list calls are the cost).
-- **Wiped or lost manifest**: the next `--all` rebuilds and re-records everything. Expensive but safe; this is why the manifest deserves a backup at scale.
+- **Wiped or lost manifest**: hybld snapshots the manifest to `<manifest>.bak` after builds (see `manifestBackup`) and restores it automatically when the manifest is missing or unreadable; the next `--since last-build` then catches up on anything built after the snapshot. If the snapshot is gone too, `hybld manifest adopt` re-records every page that already has an output file without rendering it, which costs the CMS listing instead of a full rebuild. Keep an off-host copy with `hybld manifest push` as well: the snapshot lives on the same disk as the manifest.
 - **Suspected drift** (site does not match CMS): `hybld status --reconcile` reports orphans without changing anything; `--prune` removes them; `hybld build --all` is the full re-sync (unchanged pages skip by hash, so it is mostly list calls plus a no-op sweep).
 - **Force a page**: `hybld build --routes /articles/x/ --force` bypasses the hash check for one page.
 

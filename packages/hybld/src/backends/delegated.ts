@@ -32,6 +32,12 @@ export interface DelegatedSpec {
   /** Extra env for the framework build. */
   env?: Record<string, string>;
   /**
+   * Draft previews are served from a URL the framework did not build the
+   * page for. "strip" (default) removes page scripts so a client router
+   * cannot reject that URL; "keep" is for frameworks without one.
+   */
+  previewScripts?: "strip" | "keep";
+  /**
    * Post-merge housekeeping in hybld's cumulative outDir, run once per
    * build after pages/assets merged (e.g. Next's Pages Router data JSON
    * fan-out). `removals` are outDir-relative files deleted with the run's
@@ -134,6 +140,7 @@ export class DelegatedBackend implements RenderBackend {
             id: j.id ?? undefined,
             page: j.page ?? undefined,
             item: j.item ?? undefined,
+            alternates: j.alternates ?? undefined,
             data: j.data,
           })
         )
@@ -261,6 +268,16 @@ export class DelegatedBackend implements RenderBackend {
         else reject(new Error(`${this.spec.buildCommand.join(" ")} failed (exit ${code}):\n${output.slice(-2000)}`));
       });
     });
+  }
+
+  /** Where a route's page file would sit, relative to an output dir (first candidate that exists wins). */
+  outputCandidates(route: string): string[] {
+    return this.spec.pageFileCandidates(route);
+  }
+
+  /** Whether preview snapshots keep the page's scripts (see DelegatedSpec.previewScripts). */
+  get previewKeepsScripts(): boolean {
+    return this.spec.previewScripts === "keep";
   }
 
   pageSidecars(outputPath: string): string[] {

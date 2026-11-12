@@ -219,7 +219,7 @@ const summary = await builder.build({ ids: [postId] });
 if (summary.failed.length) alert(summary.failed);      // per-page failures do NOT throw
 await builder.status();                                // totals, code-stale count, timestamps
 await builder.reconcile({ prune: true });              // remove CMS-side deletions
-await builder.preview({ slugs: ["draft-post"] });      // noindexed draft render (react-vite)
+await builder.preview({ slugs: ["draft-post"] });      // noindexed draft render (static snapshot on framework backends)
 await builder.close();                                 // always, on shutdown
 ```
 
@@ -271,7 +271,8 @@ Or implement the interface directly (`count`, `listArticles`, `getArticle`, opti
 | `hybld build <scope> [modifiers]` | The builds (see [Build scopes](#build-scopes)). |
 | `hybld serve [--port --host --secret --static --regen]` | Webhook server / static hosting / regen-on-miss. |
 | `hybld status [--reconcile [--prune]] [--json]` | Totals by type, code-stale count, last build times; reconcile finds (and with `--prune`, removes) CMS-side deletions. |
-| `hybld preview --slugs s1,s2` | Render drafts to a noindexed `/_preview/` path (react-vite backend). |
+| `hybld preview --slugs s1,s2` | Render drafts to a noindexed `/_preview/` path (a script-free snapshot on the framework backends). |
+| `hybld manifest backup` / `hybld manifest adopt` | Snapshot the manifest now; rebuild a lost manifest from the existing output without re-rendering. |
 | `hybld sync <dir> [--delete] [--redirects netlify\|nginx]` | Apply the changed-files report to a directory; emit redirect files. |
 | `hybld assets gc [--dry-run]` | Delete hashed assets no live page references. |
 | `hybld manifest export\|import <file> \| merge <db> \| push\|pull --url <u>` | Manifest transport for chunked CI and backups. |

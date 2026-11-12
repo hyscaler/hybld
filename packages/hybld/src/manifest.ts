@@ -1,5 +1,5 @@
 import { DatabaseSync } from "node:sqlite";
-import { mkdirSync, writeFileSync, readFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import type { ManifestRow } from "./types.js";
 
@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS pages (
   source_ref TEXT,
   dependents_ref TEXT,
   feed_ref TEXT,
+  alternates_ref TEXT,
   content_hash TEXT,
   cms_modified_at TEXT,
   built_at TEXT NOT NULL,
@@ -33,6 +34,7 @@ function toRow(r: any): ManifestRow {
     sourceRef: r.source_ref,
     dependentsRef: r.dependents_ref ?? null,
     feedRef: r.feed_ref ?? null,
+    alternatesRef: r.alternates_ref ?? null,
     contentHash: r.content_hash,
     cmsModifiedAt: r.cms_modified_at,
     builtAt: r.built_at,
@@ -56,7 +58,7 @@ export class Manifest {
     this.db.exec("PRAGMA synchronous = NORMAL");
     this.db.exec(SCHEMA);
     // Migrations for manifests created before these columns existed.
-    for (const col of ["dependents_ref", "feed_ref"]) {
+    for (const col of ["dependents_ref", "feed_ref", "alternates_ref"]) {
       try {
         this.db.exec(`ALTER TABLE pages ADD COLUMN ${col} TEXT`);
       } catch {
@@ -65,12 +67,12 @@ export class Manifest {
     }
     // Hot statements, prepared once (per-call prepare costs real time at scale).
     this.upsertStmt = this.db.prepare(
-      `INSERT INTO pages (route, page_type, article_id, slug, source_ref, dependents_ref, feed_ref, content_hash, cms_modified_at, built_at, asset_graph_hash, output_path)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO pages (route, page_type, article_id, slug, source_ref, dependents_ref, feed_ref, alternates_ref, content_hash, cms_modified_at, built_at, asset_graph_hash, output_path)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(route) DO UPDATE SET
          page_type=excluded.page_type, article_id=excluded.article_id, slug=excluded.slug,
          source_ref=excluded.source_ref, dependents_ref=excluded.dependents_ref,
-         feed_ref=excluded.feed_ref,
+         feed_ref=excluded.feed_ref, alternates_ref=excluded.alternates_ref,
          content_hash=excluded.content_hash,
          cms_modified_at=excluded.cms_modified_at, built_at=excluded.built_at,
          asset_graph_hash=excluded.asset_graph_hash, output_path=excluded.output_path`
@@ -111,6 +113,7 @@ export class Manifest {
         row.sourceRef,
         row.dependentsRef,
         row.feedRef,
+        row.alternatesRef ?? null,
         row.contentHash,
         row.cmsModifiedAt,
         row.builtAt,
@@ -274,6 +277,20 @@ export class Manifest {
     return merged;
   }
 
+  /**
+   * Write a consistent snapshot of the database next to it (`<path>.bak`).
+   * VACUUM INTO copies committed state only, so it is safe while the build
+   * lock is held; the snapshot replaces the previous one atomically.
+   */
+  backup(): string {
+    const dest = backupPathFor(this.path);
+    const tmp = `${dest}.tmp-${process.pid}`;
+    rmSync(tmp, { force: true });
+    this.db.exec(`VACUUM INTO '${tmp.replace(/'/g, "''")}'`);
+    renameSync(tmp, dest);
+    return dest;
+  }
+
   allMeta(): Record<string, string> {
     const rows = this.db.prepare(`SELECT key, value FROM meta`).all() as any[];
     return Object.fromEntries(rows.map((r) => [r.key, r.value]));
@@ -283,4 +300,42 @@ export class Manifest {
     this.rollback();
     this.db.close();
   }
+}
+
+export function backupPathFor(manifestPath: string): string {
+  return `${manifestPath}.bak`;
+}
+
+/**
+ * If the manifest is missing or unreadable and a backup snapshot exists,
+ * put the snapshot in its place. Returns what happened, or null when the
+ * manifest was fine (or there was nothing to restore from). An unreadable
+ * manifest is kept aside as `<path>.corrupt-<timestamp>`.
+ */
+export function restoreManifestIfLost(manifestPath: string): "missing" | "corrupt" | null {
+  const backup = backupPathFor(manifestPath);
+  if (!existsSync(backup)) return null;
+  let reason: "missing" | "corrupt" | null = null;
+  if (!existsSync(manifestPath)) {
+    reason = "missing";
+  } else {
+    try {
+      const probe = new DatabaseSync(manifestPath);
+      try {
+        probe.prepare("SELECT count(*) FROM sqlite_master").get();
+      } finally {
+        probe.close();
+      }
+    } catch {
+      reason = "corrupt";
+      renameSync(manifestPath, `${manifestPath}.corrupt-${Date.now()}`);
+    }
+  }
+  if (!reason) return null;
+  // Leftover WAL files belong to the lost database, not to the snapshot.
+  rmSync(`${manifestPath}-wal`, { force: true });
+  rmSync(`${manifestPath}-shm`, { force: true });
+  mkdirSync(dirname(manifestPath), { recursive: true });
+  copyFileSync(backup, manifestPath);
+  return reason;
 }

@@ -54,8 +54,11 @@ The framework built but the expected output file is missing. On Next, `trailingS
 **`gc skipped: live asset graph(s) without a recorded file list`**
 Pages in the manifest predate GC support for their graph, or (delegated) the site ships no hashed assets at all. In the first case, rebuild those pages; in the second, there is genuinely nothing to collect.
 
-**`Draft previews are not supported on the <next|astro> backend`**
-By design: each preview would cost a full framework build. Use the framework's own draft/preview mode.
+**A draft preview on Next.js, SvelteKit or Nuxt is not interactive**
+By design. On Next.js, Astro, SvelteKit and Nuxt a preview runs one framework build for the whole request and copies only the draft pages out, under the preview prefix; nothing else from that build is merged. Except on Astro, the snapshot's page scripts are removed, because the framework's client router does not know the `/_preview/...` URL: the preview shows the rendered draft but is not interactive. Use the framework's own draft mode when editors need a fully interactive preview.
+
+**`hybld: the manifest was missing; restored it from ...manifest.db.bak`**
+The manifest file was gone (or unreadable) and hybld put the last backup snapshot in its place. Nothing to fix: the next `--since last-build` run picks up whatever was built after that snapshot. To deliberately start from an empty manifest, delete the `.bak` file as well.
 
 **Serve returns `503 {"status":"regenerating"}`**
 Expected on delegated backends with `--regen`: the page is building asynchronously (a framework build must not block the request). Retry after the indicated delay.

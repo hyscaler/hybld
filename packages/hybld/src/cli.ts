@@ -181,6 +181,29 @@ async function main(): Promise<number> {
     const [sub, ...files] = positionals;
     const builder = await createBuilder({ configFile });
     const manifestPath = builder.config.manifest;
+
+    if (sub === "backup") {
+      const dest = builder.backupManifest();
+      await builder.close();
+      if (!dest) {
+        console.error("manifest backup failed");
+        return 1;
+      }
+      console.log(`manifest snapshot written to ${dest}`);
+      return 0;
+    }
+    if (sub === "adopt") {
+      // Recovery after a lost manifest: walk the catalog and record every
+      // page whose output file already exists, rendering only the rest.
+      try {
+        const summary = await builder.build({ all: true, adopt: true, dryRun: Boolean(flags["dry-run"]) });
+        if (!flags.json) console.log(`manifest adopt: ${summary.adopted ?? 0} existing page(s) recorded without rendering`);
+        printSummary(summary, Boolean(flags.json));
+        return summary.failed.length > 0 ? 2 : 0;
+      } finally {
+        await builder.close();
+      }
+    }
     await builder.close();
 
     if (sub === "push" || sub === "pull") {
@@ -212,7 +235,7 @@ async function main(): Promise<number> {
         console.log(`merged ${n} newer page(s) from ${files[0]} into ${manifestPath}`);
         return 0;
       }
-      console.error("usage: hybld manifest export <file> | import <file> | merge <other.db> | push --url <u> | pull --url <u>");
+      console.error("usage: hybld manifest export <file> | import <file> | merge <other.db> | push --url <u> | pull --url <u> | backup | adopt");
       return 1;
     } finally {
       manifest.close();
@@ -304,7 +327,7 @@ async function main(): Promise<number> {
     return 0;
   }
 
-  console.log(`hybld: incremental static builds for React + Vite, Next.js, and Astro
+  console.log(`hybld: incremental static builds for React + Vite, Next.js, Astro, SvelteKit and Nuxt
 
 usage:
   hybld build --all [--clean]
@@ -321,6 +344,7 @@ usage:
   hybld assets gc [--dry-run]
   hybld status [--reconcile [--prune]]
   hybld manifest export|import <file> | merge <other.db> | push|pull --url <u>
+  hybld manifest backup | adopt
 
 shared flags: --config <path> --concurrency <n> --dry-run --force
               --no-dependents --fail-fast --wait --json --verbose

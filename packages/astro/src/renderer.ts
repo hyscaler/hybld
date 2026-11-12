@@ -22,6 +22,8 @@ export function astroRenderer(opts: AstroRendererOptions = {}): RendererFactory 
     frameworkOutDir: opts.astroOutDir ?? "dist",
     sourceDirs: opts.sourceDirs ?? ["src", "public", "astro.config.mjs", "astro.config.ts", "package.json"],
     assetDirs: ["_astro"],
+    // Astro has no client router by default; islands and scripts work at any URL.
+    previewScripts: "keep",
     pageFileCandidates: (route) => {
       if (route === "/") return ["index.html"];
       const trimmed = route.replace(/^\/+/, "").replace(/\/+$/, "");
