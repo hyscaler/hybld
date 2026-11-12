@@ -421,3 +421,100 @@ describe("delegated draft previews", () => {
     expect(status.totalPages).toBe(1 + 1); // the article plus the framework's static home
   });
 });
+
+describe("streamed catalog builds", () => {
+  const N = 4500; // crosses the 2000-article window twice
+  const articles = Array.from({ length: N }, (_, i) => ({ id: i + 1, slug: `s${i + 1}`, title: `T${i + 1}`, cat: `c${i % 3}` }));
+  const make = (root: string) => {
+    const rendered: string[] = [];
+    const backend: any = {
+      name: "mem", mode: "owned", assetDirs: [], assetFiles: [], assetGraphHash: "g1",
+      async prepare() {},
+      async renderBatch(jobs: any[]) {
+        return jobs.map((j) => (rendered.push(j.route), { route: j.route, kind: "html", html: `<h1>${j.data.title ?? j.route}</h1>` }));
+      },
+      pageSidecars: () => [], destroy() {},
+    };
+    let enumerations = 0;
+    const builder = new Builder(
+      validateConfig(
+        {
+          adapter: memoryAdapter(articles),
+          renderer: { name: "mem", mode: "owned", create: () => backend },
+          outDir: "site",
+          manifest: ".hybld/manifest.db",
+          cms: { perPage: 100, concurrency: 4 },
+          sitemap: { enabled: true, baseUrl: "https://example.test" },
+          pages: {
+            article: {
+              route: (a: any) => `/a/${a.slug}/`,
+              data: (a: any) => ({ title: a.title }),
+              dependents: (a: any) => ["/", { type: "cat", id: a.cat, depth: 1 }],
+            },
+            home: { route: () => "/", data: async () => ({ title: "home" }) },
+            cat: {
+              enumerate: async () => (enumerations++, [{ slug: "c0" }, { slug: "c1" }, { slug: "c2" }]),
+              route: (c: any) => `/cat/${c.slug}/`,
+              data: async (c: any) => ({ title: c.slug }),
+            },
+          },
+        } as any,
+        root
+      )
+    );
+    return { builder, rendered, enumerations: () => enumerations };
+  };
+
+  it("a full build covers the whole catalog across windows, and a rerun skips it all", async () => {
+    const root = mkdtempSync(join(tmpdir(), "hybld-stream-"));
+    const a = make(root);
+    const first = await a.builder.build({ all: true });
+    await a.builder.close();
+    expect(first.failed).toEqual([]);
+    expect(first.built.length).toBe(N + 4); // articles, home, three category pages
+    expect(new Set(first.built).size).toBe(N + 4);
+    expect(readFileSync(join(root, "site/sitemap-0.xml"), "utf8")).toContain("/a/s4500/");
+
+    const b = make(root);
+    const second = await b.builder.build({ all: true });
+    await b.builder.close();
+    expect(second.built).toEqual([]);
+    expect(second.skipped.length).toBe(N + 4);
+  });
+
+  it("--chunk workers partition the catalog exactly once and resolve shared dependents once", async () => {
+    const seen = new Map<string, number>();
+    for (let i = 1; i <= 3; i++) {
+      const root = mkdtempSync(join(tmpdir(), `hybld-chunk${i}-`));
+      const w = make(root);
+      const s = await w.builder.build({ chunk: { index: i, total: 3 } });
+      await w.builder.close();
+      expect(s.failed).toEqual([]);
+      for (const r of s.built) if (r.startsWith("/a/")) seen.set(r, (seen.get(r) ?? 0) + 1);
+      // Roughly a third each: a hash partition, not an exact split.
+      const mine = s.built.filter((r) => r.startsWith("/a/")).length;
+      expect(mine).toBeGreaterThan(N / 3 - 250);
+      expect(mine).toBeLessThan(N / 3 + 250);
+      // Every article names the same few dependents; they are resolved once
+      // per run, not once per article.
+      expect(s.dependentsRebuilt.sort()).toEqual(["/", "/cat/c0/", "/cat/c1/", "/cat/c2/"]);
+      expect(w.enumerations()).toBeLessThan(20);
+    }
+    expect(seen.size).toBe(N);
+    expect([...seen.values()].every((n) => n === 1)).toBe(true);
+  });
+
+  it("--chunk-size takes the next unbuilt pages and stops listing once it has them", async () => {
+    const root = mkdtempSync(join(tmpdir(), "hybld-chunksize-"));
+    const a = make(root);
+    const first = await a.builder.build({ chunkSize: 300 });
+    await a.builder.close();
+    expect(first.built.filter((r) => r.startsWith("/a/")).length).toBe(300);
+    const b = make(root);
+    const second = await b.builder.build({ chunkSize: 300 });
+    await b.builder.close();
+    const again = second.built.filter((r) => r.startsWith("/a/"));
+    expect(again.length).toBe(300);
+    expect(again.some((r) => first.built.includes(r))).toBe(false);
+  });
+});

@@ -24,11 +24,20 @@ Rules that keep the budget sane:
 - For bulk rebuild campaigns (not steady state), enable the disk cache: `cms: { cache: { ttlSeconds: 3600 } }`. Repeat list calls across chunked jobs then hit disk, not the CMS. Keep it off for webhook-driven steady state (it trades freshness).
 - Aggregate loaders share a per-run memo: five category pages calling `cms.list({ category_slug })` with identical params cost one request.
 
+## Memory
+
+Catalog-wide builds (`--all`, `--chunk`, `--chunk-size`, `--since`) stream the CMS listing: articles are fetched, rendered, written and recorded in windows of 2,000, and each window is released before the next. Memory use depends on the window, not on the catalog. As a reference point, a single `--all` over 300,000 articles of 30 KB each completes inside a 400 MB Node heap.
+
+Two things to know:
+
+- On the framework backends (Next.js, Astro, SvelteKit, Nuxt) streaming needs a batch size (`render.batchSize` or `--batch-size`); without one the whole scope goes to a single framework build and is held in memory for it.
+- The manifest is checkpointed after every window, so a crashed first build resumes where it stopped when you rerun the same command.
+
 ## Phase 1: the first full build
 
 **Up to ~100k pages: one job.** A single `hybld build --all` is typically CMS-bound; at 8 concurrent requests and 100/page, a 100k catalog lists in ~2 to 5 minutes plus render time. Do a `--limit 500` smoke test first, check the summary and a few output files, then run `--all`.
 
-**Beyond that: chunk it across CI jobs.** Chunks slice a stable ordering (collection, then id), so N jobs partition the catalog exactly, and items published mid-build cannot shift the slices (a follow-up `--since` picks them up):
+**Beyond that: chunk it across CI jobs.** Each item belongs to a chunk by a hash of its collection and id, so N jobs partition the catalog exactly, each job streams the listing and keeps only its own items, and items published mid-build cannot move existing ones between chunks (a follow-up `--since` picks them up):
 
 ```yaml
 # GitHub Actions sketch: 10-way chunked first build

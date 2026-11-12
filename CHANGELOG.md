@@ -6,6 +6,20 @@ All notable changes to the hybld packages are documented here. All packages vers
 
 Includes the 1.0.1 pacing fix below, which was never published on its own.
 
+- Catalog-wide builds are streamed. `--all`, `--chunk`, `--chunk-size`
+  and `--since` used to load the whole catalog and evaluate every page
+  before rendering any, so memory grew with catalog size (2 GB at
+  100,000 articles of 30 KB). The listing is now processed in windows
+  that are rendered, written and checkpointed one at a time; a 300,000
+  article build completes inside a 400 MB heap, and an interrupted full
+  build resumes on rerun. The sitemap and reconcile read the manifest
+  row by row.
+- `--chunk i/n` assigns items by a hash of their id, not by position in
+  a sorted listing, so workers no longer need the whole catalog in
+  memory. Chunk membership differs from 1.0.x: do not mix 1.0.x and
+  1.1.x workers within one chunked build.
+- Distinct dependent references are resolved once per run instead of
+  once per article.
 - Batched framework builds for Next.js and Astro: `render.batchSize` (or
   `--batch-size <n>`) splits a large scope into several framework builds
   in one command. Every batch carries all page types, assets merge after

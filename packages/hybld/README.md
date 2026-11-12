@@ -281,7 +281,7 @@ Or implement the interface directly (`count`, `listArticles`, `getArticle`, opti
 
 Engine throughput (measured, synthetic renderer): ~6,000 pages/s full build, ~4s no-change sweep at 200k pages, 0.1 to 0.5s incrementals. The practical bottleneck is CMS round-trips, so the one rule that matters: **derive `data()` from the list payload**, so a 1M-article build costs ~10k list calls, not 1M item fetches.
 
-For 100k+ catalogs: chunk the first build across CI jobs (`--chunk i/10` slices a stable ordering; merge manifests afterwards with `hybld manifest merge`), give the manifest a durable home (`manifest push/pull --url <presigned S3>` for ephemeral CI), and expect ~1 to 2s of sitemap regeneration per publish at 1M pages (batch webhook bursts). Everything after the first build is incremental forever.
+For 100k+ catalogs: chunk the first build across CI jobs (`--chunk i/10` assigns items by a hash of their id; merge manifests afterwards with `hybld manifest merge`), give the manifest a durable home (`manifest push/pull --url <presigned S3>` for ephemeral CI), and expect ~1 to 2s of sitemap regeneration per publish at 1M pages (batch webhook bursts). Everything after the first build is incremental forever.
 
 ## Troubleshooting
 

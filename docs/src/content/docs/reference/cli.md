@@ -13,7 +13,7 @@ Exactly one scope selector per invocation (`--chunk-size` may also accompany `--
 ```bash
 hybld build --all [--clean]                 # full catalog + aggregates; --clean empties outDir first
 hybld build --limit <n>                     # first n items per collection (smoke test)
-hybld build --chunk <i>/<n>                 # deterministic slice i of n (parallel CI full builds)
+hybld build --chunk <i>/<n>                 # deterministic share i of n, by id hash (parallel CI full builds)
 hybld build --chunk-size <n>                # next n never-built pages
 hybld build --routes /a/,/b/                # explicit routes (manifest, singleton, or match-resolved)
 hybld build --slugs s1,s2                   # by CMS slug

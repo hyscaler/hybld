@@ -88,11 +88,20 @@ describe("sitemap and feed output hygiene", () => {
       cmsModifiedAt: "2026-01-01T00:00:00Z",
       builtAt: "2026-01-01T00:00:00Z",
     });
-    const big = { all: () => Array.from({ length: 50_001 }, (_, i) => row(i)) } as any;
+    // The sitemap reads rows through the manifest's streaming iterator.
+    const stub = (rows: any[]) =>
+      ({
+        sitemapRows: () =>
+          rows
+            .slice()
+            .sort((a, b) => (a.route < b.route ? -1 : 1))
+            .map((r) => ({ route: r.route, lastmod: r.cmsModifiedAt ?? r.builtAt, alternatesRef: null })),
+      }) as any;
+    const big = stub(Array.from({ length: 50_001 }, (_, i) => row(i)));
     writeSitemap(big, writer, "https://example.com");
     expect(existsSync(join(dir, "sitemap-1.xml"))).toBe(true);
 
-    const small = { all: () => [row(1)] } as any;
+    const small = stub([row(1)]);
     writeSitemap(small, writer, "https://example.com");
     expect(existsSync(join(dir, "sitemap-0.xml"))).toBe(true);
     expect(existsSync(join(dir, "sitemap-1.xml"))).toBe(false);

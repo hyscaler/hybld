@@ -128,7 +128,7 @@ hybld manifest merge job1.db && hybld manifest merge job2.db && ...
 hybld status   # totals match the catalog = done
 ```
 
-Chunks slice a stable ordering (collection, then id ascending), so items published mid-build cannot shift the slices; a follow-up `--since` picks them up. Share manifests between jobs with `hybld manifest push/pull --url <presigned-url>`. Full CI example and sizing guidance: [Scaling to large catalogs](/operate/scaling/#phase-1-the-first-full-build).
+Each item belongs to a chunk by a hash of its collection and id, so N jobs partition the catalog exactly, each job streams the listing and keeps only its own items, and items published mid-build cannot move existing ones between chunks; a follow-up `--since` picks up the new ones. Chunks are close to equal in size, not exactly equal. Share manifests between jobs with `hybld manifest push/pull --url <presigned-url>`. Full CI example and sizing guidance: [Scaling to large catalogs](/operate/scaling/#phase-1-the-first-full-build).
 
 ## App code deploys (code-staleness)
 

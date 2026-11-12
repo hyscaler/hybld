@@ -211,6 +211,30 @@ export class Manifest {
     return (this.db.prepare(`SELECT * FROM pages ORDER BY route`).all() as any[]).map(toRow);
   }
 
+  /**
+   * Rows for the sitemap, in route order, read one at a time. Loading every
+   * full row at once costs hundreds of megabytes on a large manifest.
+   */
+  *sitemapRows(): IterableIterator<{ route: string; lastmod: string; alternatesRef: string | null }> {
+    const stmt = this.db.prepare(
+      `SELECT route, COALESCE(cms_modified_at, built_at) AS lastmod, alternates_ref FROM pages ORDER BY route`
+    );
+    for (const r of stmt.iterate() as IterableIterator<any>) {
+      yield { route: r.route, lastmod: r.lastmod, alternatesRef: r.alternates_ref ?? null };
+    }
+  }
+
+  /** Collection rows of one page type (id, route, output path, dependents), read one at a time. */
+  *articleRowsOfType(pageType: string): IterableIterator<ManifestRow> {
+    const stmt = this.db.prepare(`SELECT * FROM pages WHERE page_type = ? AND article_id IS NOT NULL`);
+    for (const r of stmt.iterate(pageType) as IterableIterator<any>) yield toRow(r);
+  }
+
+  /** Every row, read one at a time (for merges of large manifests). */
+  *eachRow(): IterableIterator<ManifestRow> {
+    for (const r of this.db.prepare(`SELECT * FROM pages`).iterate() as IterableIterator<any>) yield toRow(r);
+  }
+
   routes(): Set<string> {
     const rows = this.db.prepare(`SELECT route FROM pages`).all() as any[];
     return new Set(rows.map((r) => r.route));
@@ -262,7 +286,7 @@ export class Manifest {
   merge(otherPath: string): number {
     const other = new Manifest(otherPath);
     let merged = 0;
-    for (const row of other.all()) {
+    for (const row of other.eachRow()) {
       const existing = this.get(row.route);
       if (!existing || existing.builtAt < row.builtAt) {
         this.upsert(row);

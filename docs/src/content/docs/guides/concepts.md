@@ -102,7 +102,7 @@ Every build has exactly one scope:
 | ------- | --------- |
 | `--all` | Full catalog plus all aggregates. |
 | `--limit N` | First N items per collection (smoke tests). |
-| `--chunk i/n` | Deterministic slice of the catalog (ordered by collection then id), for spreading a full build across CI jobs. |
+| `--chunk i/n` | Deterministic share of the catalog (items are assigned by a hash of their id), for spreading a full build across CI jobs. |
 | `--chunk-size N` | The next N never-built pages. |
 | `--routes/--slugs/--ids` | Explicit targets. `--ids author:5` targets a non-default collection. |
 | `--since last-build` (or a date) | Everything the CMS reports as modified since then, plus deletions when the adapter supports them. |

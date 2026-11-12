@@ -1580,7 +1580,9 @@ export class Builder {
         for (const a of res.items) liveIds.add(this.idOf(type, a));
         if (!res.hasMore || res.items.length === 0) break;
       }
-      orphans.push(...this.manifest.all().filter((r) => r.pageType === type && r.articleId && !liveIds.has(r.articleId)));
+      for (const row of this.manifest.articleRowsOfType(type)) {
+        if (row.articleId && !liveIds.has(row.articleId)) orphans.push(row);
+      }
     }
     return orphans;
   }
