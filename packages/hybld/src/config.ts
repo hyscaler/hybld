@@ -58,6 +58,22 @@ export function validateConfig(raw: HybldConfig, configDir: string, configFile?:
   if (raw.images && (!Array.isArray(raw.images.origins) || raw.images.origins.length === 0)) {
     problems.push("images.origins must be a non-empty array of origins to localize");
   }
+  const opt = raw.images?.optimize;
+  if (opt) {
+    if (opt.maxWidth !== undefined && !(Number.isInteger(opt.maxWidth) && opt.maxWidth > 0)) {
+      problems.push("images.optimize.maxWidth must be a positive integer");
+    }
+    if (opt.format !== undefined && !["webp", "avif", "original"].includes(opt.format)) {
+      problems.push('images.optimize.format must be "webp", "avif" or "original"');
+    }
+    if (opt.quality !== undefined && !(opt.quality >= 1 && opt.quality <= 100)) {
+      problems.push("images.optimize.quality must be between 1 and 100");
+    }
+  }
+  const batchSize = raw.render?.batchSize;
+  if (batchSize !== undefined && !(Number.isInteger(batchSize) && batchSize > 0)) {
+    problems.push("render.batchSize must be a positive integer");
+  }
   if (problems.length) {
     throw new Error(`Invalid hybld config:\n  - ${problems.join("\n  - ")}`);
   }
@@ -77,6 +93,7 @@ export function validateConfig(raw: HybldConfig, configDir: string, configFile?:
       template: resolve(root, raw.render?.template ?? "index.html"),
       workers: raw.render?.workers ?? 4,
       timeout: raw.render?.timeout ?? 60_000,
+      batchSize: raw.render?.batchSize,
     },
     cms: {
       concurrency: raw.cms?.concurrency ?? 4,
@@ -98,7 +115,19 @@ export function validateConfig(raw: HybldConfig, configDir: string, configFile?:
     },
     redirects: { file: resolve(root, raw.redirects?.file ?? ".hybld/redirects.json") },
     emitData: raw.emitData ?? false,
-    images: raw.images ? { origins: raw.images.origins, dir: raw.images.dir ?? "media" } : null,
+    images: raw.images
+      ? {
+          origins: raw.images.origins,
+          dir: raw.images.dir ?? "media",
+          optimize: raw.images.optimize
+            ? {
+                maxWidth: raw.images.optimize.maxWidth ?? 1600,
+                format: raw.images.optimize.format ?? "webp",
+                quality: raw.images.optimize.quality ?? 80,
+              }
+            : null,
+        }
+      : null,
     preview: { pathPrefix: raw.preview?.pathPrefix ?? "/_preview" },
   };
 }

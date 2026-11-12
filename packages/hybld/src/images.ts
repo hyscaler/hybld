@@ -8,14 +8,20 @@ export interface ImageLocalizerOptions {
   dir: string; // subdirectory under outDir, e.g. "media"
   outDir: string;
   fetcher?: Fetcher;
+  /** Resize and re-encode raster images with sharp (optional dependency). */
+  optimize?: { maxWidth: number; format: "webp" | "avif" | "original"; quality: number };
 }
+
+/** Formats sharp re-encodes. Everything else (SVG, GIF, ICO) is copied as is. */
+const RASTER = new Set([".png", ".jpg", ".jpeg", ".webp", ".avif"]);
 
 /**
  * Image localization: downloads CMS-hosted images referenced in rendered HTML
  * into the output directory and rewrites their URLs, so the static site does
  * not depend on the CMS at serve time. Handles src attributes; downloads each
- * unique URL once per process. No resizing/optimization (that would require a
- * native imaging dependency; see roadmap).
+ * unique URL once per process. With `optimize`, raster images are capped to a
+ * maximum width and re-encoded through sharp before they are written; sharp is
+ * an optional dependency, loaded only when optimization is switched on.
  */
 export class ImageLocalizer {
   private done = new Map<string, string>(); // remote url -> local path
@@ -23,7 +29,28 @@ export class ImageLocalizer {
   /** Files actually written since the last drain (relative to outDir). */
   private newFiles: string[] = [];
 
+  private sharp: any = null;
+
   constructor(private opts: ImageLocalizerOptions) {}
+
+  /** Load sharp up front so a missing install fails the build with a clear message, not silently per image. */
+  async init(): Promise<void> {
+    if (!this.opts.optimize || this.sharp) return;
+    try {
+      const name = "sharp";
+      const mod: any = await import(name);
+      this.sharp = mod.default ?? mod;
+    } catch {
+      throw new Error(
+        "images.optimize needs the `sharp` package, which is not installed. " +
+          "Add it to the project (npm install -D sharp) or remove images.optimize from the config."
+      );
+    }
+  }
+
+  private optimizable(ext: string): boolean {
+    return Boolean(this.opts.optimize) && RASTER.has(ext.toLowerCase());
+  }
 
   drainNewFiles(): string[] {
     const files = this.newFiles;
@@ -52,8 +79,23 @@ export class ImageLocalizer {
   private localPathFor(url: string): string {
     const clean = url.split("?")[0];
     const ext = extname(clean) || ".img";
+    const o = this.opts.optimize;
+    if (o && this.optimizable(ext)) {
+      // The settings are part of the name: changing them produces new files
+      // instead of silently reusing images encoded with the old settings.
+      const hash = createHash("sha1").update(url).update(`${o.maxWidth}|${o.format}|${o.quality}`).digest("hex").slice(0, 16);
+      return `/${this.opts.dir}/${hash}${o.format === "original" ? ext : `.${o.format}`}`;
+    }
     const hash = createHash("sha1").update(url).digest("hex").slice(0, 16);
     return `/${this.opts.dir}/${hash}${ext}`;
+  }
+
+  private async encode(buf: Buffer, ext: string): Promise<Buffer> {
+    const o = this.opts.optimize!;
+    let img = this.sharp(buf).rotate().resize({ width: o.maxWidth, withoutEnlargement: true });
+    const format = o.format === "original" ? ext.toLowerCase().replace(".", "").replace("jpg", "jpeg") : o.format;
+    img = img.toFormat(format, { quality: o.quality });
+    return img.toBuffer();
   }
 
   async localizeHtml(html: string): Promise<{ html: string; downloaded: string[] }> {
@@ -97,7 +139,9 @@ export class ImageLocalizer {
       try {
         const res = this.opts.fetcher ? await this.opts.fetcher(url) : await fetch(url);
         if (!res.ok) throw new Error(`status ${res.status}`);
-        const buf = Buffer.from(await res.arrayBuffer());
+        let buf: Buffer = Buffer.from(await res.arrayBuffer());
+        const ext = extname(url.split("?")[0]);
+        if (this.optimizable(ext)) buf = await this.encode(buf, ext);
         mkdirSync(join(this.opts.outDir, this.opts.dir), { recursive: true });
         writeFileSync(target, buf);
         this.done.set(url, local);

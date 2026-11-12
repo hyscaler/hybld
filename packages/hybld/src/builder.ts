@@ -116,6 +116,7 @@ export class Builder {
           dir: config.images.dir,
           outDir: config.outDir,
           fetcher: (config.adapter as any).fetcher,
+          optimize: config.images.optimize ?? undefined,
         })
       : null;
   }
@@ -207,6 +208,7 @@ export class Builder {
       this.log(`build (${mode}) starting [backend: ${this.backend.name}]`);
       (this.config.adapter as any).fetcher?.clearMemo?.();
       for (const [, c] of this.collections()) (c.adapter as any)?.fetcher?.clearMemo?.();
+      await this.images?.init();
       await this.backend.prepare({ clean: opts.clean ?? false });
       const assetHash = this.backend.assetGraphHash;
 
@@ -376,18 +378,43 @@ export class Builder {
       // Phase 2: render through the backend and write as results land. The
       // owned backend renders in bounded slices so a large scope never holds
       // every page's HTML in memory at once (and completed slices survive a
-      // late crash); delegated backends need the whole scope in ONE framework
-      // build, so they get a single batch.
+      // late crash); delegated backends get the whole scope in ONE framework
+      // build by default. With render.batchSize (or --batch-size) a large
+      // delegated scope is split into several framework builds, each padded
+      // so every page type stays present, and the manifest is checkpointed
+      // between batches so a crash late in a long first build keeps the
+      // batches already merged.
       const RENDER_SLICE = 500;
-      const sliceSize = this.backend.mode === "owned" ? RENDER_SLICE : Math.max(1, toRender.length);
+      const delegated = this.backend.mode === "delegated";
+      const batchSize = opts.batchSize ?? this.config.render.batchSize;
+      const sliceSize = delegated ? Math.max(1, batchSize ?? toRender.length) : RENDER_SLICE;
       const slices: EvaluatedJob[][] = [];
       if (toRender.length === 0) slices.push([]);
       for (let i = 0; i < toRender.length; i += sliceSize) slices.push(toRender.slice(i, i + sliceSize));
-      for (const slice of slices) {
+      if (delegated && slices.length > 1) {
+        const firstOfType = new Map<string, EvaluatedJob>();
+        for (const ev of toRender) {
+          if (!firstOfType.has(ev.renderJob.pageType)) firstOfType.set(ev.renderJob.pageType, ev);
+        }
+        for (const slice of slices) {
+          const present = new Set(slice.map((ev) => ev.renderJob.pageType));
+          for (const [type, ev] of firstOfType) if (!present.has(type)) slice.push(ev);
+        }
+      }
+      const handled = new Set<string>();
+      const assetFilesSeen = new Set<string>();
+      for (const [sliceIndex, slice] of slices.entries()) {
+        const lastSlice = sliceIndex === slices.length - 1;
+        if (slices.length > 1) this.log(`render batch ${sliceIndex + 1}/${slices.length} (${slice.length} pages)`);
         const results = await this.backend.renderBatch(slice.map((ev) => ev.renderJob));
         const byRoute = new Map(slice.map((ev) => [ev.job.route, ev]));
         for (const result of results) {
           const ev = byRoute.get(result.route);
+          // A padding page rides in several batches; record it once.
+          if (result.kind !== "extra") {
+            if (handled.has(result.route)) continue;
+            handled.add(result.route);
+          }
           try {
             if (result.kind === "failed") {
               summary.failed.push({ route: result.route, error: result.error });
@@ -422,46 +449,62 @@ export class Builder {
             if (opts.failFast) throw err;
           }
         }
-      }
 
-      // Delegated: merge the framework's hashed assets append-only.
-      if (this.backend instanceof DelegatedBackend) {
-        for (const { absPath, relPath } of this.backend.stagedAssetFiles()) {
-          const target = join(this.config.outDir, relPath);
-          if (!existsSync(target)) {
-            mkdirSync(dirname(target), { recursive: true });
-            copyFileSync(absPath, target);
-            writer.created.push(relPath);
+        // The framework's staging dir is replaced by the next batch's build,
+        // so everything below merges per batch.
+        // Delegated: merge the framework's hashed assets append-only.
+        if (this.backend instanceof DelegatedBackend) {
+          for (const { absPath, relPath } of this.backend.stagedAssetFiles()) {
+            const target = join(this.config.outDir, relPath);
+            if (!existsSync(target)) {
+              mkdirSync(dirname(target), { recursive: true });
+              copyFileSync(absPath, target);
+              writer.created.push(relPath);
+            }
+          }
+          // Non-page, non-asset outputs (public/ files, robots.txt, favicons,
+          // rss.xml): overwrite-copy, since these are unhashed and can change
+          // without renaming. Byte-compare keeps the changed-files report honest.
+          for (const { absPath, relPath } of this.backend.stagedStaticFiles()) {
+            const target = join(this.config.outDir, relPath);
+            const src = readFileSync(absPath);
+            if (existsSync(target)) {
+              if (src.equals(readFileSync(target))) continue;
+              copyFileSync(absPath, target);
+              writer.updated.push(relPath);
+            } else {
+              mkdirSync(dirname(target), { recursive: true });
+              copyFileSync(absPath, target);
+              writer.created.push(relPath);
+            }
           }
         }
-        // Non-page, non-asset outputs (public/ files, robots.txt, favicons,
-        // rss.xml): overwrite-copy, since these are unhashed and can change
-        // without renaming. Byte-compare keeps the changed-files report honest.
-        for (const { absPath, relPath } of this.backend.stagedStaticFiles()) {
-          const target = join(this.config.outDir, relPath);
-          const src = readFileSync(absPath);
-          if (existsSync(target)) {
-            if (src.equals(readFileSync(target))) continue;
-            copyFileSync(absPath, target);
-            writer.updated.push(relPath);
-          } else {
-            mkdirSync(dirname(target), { recursive: true });
-            copyFileSync(absPath, target);
-            writer.created.push(relPath);
-          }
+        for (const file of this.backend.assetFiles) assetFilesSeen.add(file);
+
+        // Backend post-merge housekeeping (e.g. Next Pages Router data JSON
+        // fan-out/pruning); its removals join the run's deferred deletions.
+        // Deletions are handed over once, with the last batch.
+        if (this.backend.finalizeMerge) {
+          const fin = this.backend.finalizeMerge({
+            deletedPageOutputs: lastSlice ? deletions.map((d) => d.outputPath) : [],
+          });
+          writer.created.push(...fin.created);
+          writer.updated.push(...fin.updated);
+          pendingRemovals.push(...fin.removals);
+        }
+
+        // Checkpoint: make the batches merged so far durable. Only when no
+        // file removals are pending, since those are journaled against the
+        // run's final commit. The flag forces sitemap/feed regeneration if
+        // the run dies after its last checkpoint.
+        if (!lastSlice && pendingRemovals.length === 0) {
+          this.manifest.setMeta("runIncomplete", "1");
+          this.manifest.commit();
+          this.manifest.begin();
         }
       }
-      if (this.backend.assetFiles.length > 0) {
-        this.manifest.recordAssetGraph(assetHash, this.backend.assetFiles);
-      }
-
-      // Backend post-merge housekeeping (e.g. Next Pages Router data JSON
-      // fan-out/pruning); its removals join the run's deferred deletions.
-      if (this.backend.finalizeMerge) {
-        const fin = this.backend.finalizeMerge({ deletedPageOutputs: deletions.map((d) => d.outputPath) });
-        writer.created.push(...fin.created);
-        writer.updated.push(...fin.updated);
-        pendingRemovals.push(...fin.removals);
+      if (assetFilesSeen.size > 0) {
+        this.manifest.recordAssetGraph(assetHash, [...assetFilesSeen]);
       }
 
       // Deletions (FR-9): manifest rows go now (inside the txn), files after commit.
@@ -473,7 +516,9 @@ export class Builder {
 
       // Sitemap and feed derive purely from the page set; skip both when it
       // did not change (all-skip sweeps stay cheap at large catalogs).
-      const pageSetChanged = summary.built.length + summary.deleted.length + summary.moved.length > 0;
+      const resumedRun = this.manifest.getMeta("runIncomplete") === "1";
+      const pageSetChanged = resumedRun || summary.built.length + summary.deleted.length + summary.moved.length > 0;
+      if (resumedRun) this.manifest.setMeta("runIncomplete", "");
       if (pageSetChanged && this.config.sitemap.enabled) {
         if (!this.config.sitemap.baseUrl) throw new Error("sitemap.baseUrl is required when sitemap.enabled is true");
         writeSitemap(this.manifest, writer, this.config.sitemap.baseUrl);
@@ -1021,10 +1066,15 @@ export class Builder {
   private writeReport(summary: BuildSummary, writer: OutputWriter): string {
     const reportPath = join(dirname(this.config.manifest), "last-build.json");
     mkdirSync(dirname(reportPath), { recursive: true });
+    // A file written in several batches (framework extras, padding pages)
+    // is listed once; created wins over updated.
+    const created = [...new Set(writer.created)];
+    const createdSet = new Set(created);
+    const updated = [...new Set(writer.updated)].filter((f) => !createdSet.has(f));
     writeFileSync(
       reportPath,
       JSON.stringify(
-        { ...summary, files: { created: writer.created, updated: writer.updated, deleted: writer.deletedFiles } },
+        { ...summary, files: { created, updated, deleted: writer.deletedFiles } },
         null,
         2
       )

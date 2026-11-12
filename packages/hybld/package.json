@@ -1,6 +1,6 @@
 {
   "name": "hybld",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Incremental and selective static builds for React + Vite projects backed by a headless CMS",
   "author": "HyScaler",
   "license": "MIT",
@@ -70,12 +70,19 @@
   "peerDependencies": {
     "react": ">=18",
     "react-dom": ">=18",
-    "vite": ">=5"
+    "vite": ">=5",
+    "sharp": ">=0.33"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
     "typescript": "^5.6.0",
     "vite": "^6.0.0",
-    "vitest": "^3.0.0"
+    "vitest": "^3.0.0",
+    "sharp": "^0.34.0"
+  },
+  "peerDependenciesMeta": {
+    "sharp": {
+      "optional": true
+    }
   }
 }

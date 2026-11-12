@@ -40,6 +40,7 @@ export default defineConfig({
 | `template` | `index.html` | Vite HTML template; must contain `<!--app-head-->` and `<!--app-html-->`. |
 | `workers` | 4 | Render worker threads. Also used as the default engine-side concurrency. Crashed workers are respawned within a bounded budget; a bundle that kills every worker fails the build with the underlying error. |
 | `timeout` | 60000 | Per-page render timeout in ms. A hung render fails that page instead of stalling the build. |
+| `batchSize` | off | Next.js and Astro only. Splits a large scope into framework builds of at most this many pages and checkpoints the manifest between them, so a crash late in a long first build keeps the batches already merged. `--batch-size <n>` overrides it for one run. |
 
 ## `cms`
 
@@ -123,10 +124,16 @@ RSS 2.0 at `feed.xml`, maintained from feed entries captured in the manifest at 
 ## `images`
 
 ```ts
-images: { origins: ["https://cms.example.com"], dir?: "media" }
+images: {
+  origins: ["https://cms.example.com"],
+  dir?: "media",
+  optimize?: { maxWidth?: 1600, format?: "webp", quality?: 80 },
+}
 ```
 
-Downloads CMS-hosted images referenced by rendered pages into `outDir/<dir>/` and rewrites their URLs (including framework sidecars like Next RSC payloads). Covers `src`/`href` and `srcset` candidates, and decodes HTML-escaped ampersands so query-string URLs match. Downloads each unique URL once, retrying a transient failure once; a persistent failure leaves the original URL in place. No resizing/optimization.
+Downloads CMS-hosted images referenced by rendered pages into `outDir/<dir>/` and rewrites their URLs (including framework sidecars like Next RSC payloads). Covers `src`/`href` and `srcset` candidates, and decodes HTML-escaped ampersands so query-string URLs match. Downloads each unique URL once, retrying a transient failure once; a persistent failure leaves the original URL in place.
+
+With `optimize`, PNG, JPEG, WebP and AVIF images are capped to `maxWidth` (never enlarged) and re-encoded before they are written. `format` is `"webp"` (default), `"avif"`, or `"original"` to keep each image's own format; `quality` is 1 to 100. SVG, GIF and ICO files are copied untouched. Optimization needs the optional `sharp` package in your project (`npm install -D sharp`); the build stops with a clear message if it is missing. The settings are part of each file name, so changing them writes new files instead of reusing old ones. Images in a `srcset` are each capped at `maxWidth`, so keep `maxWidth` at or above your largest `w` descriptor.
 
 ## `redirects`
 

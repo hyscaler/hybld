@@ -151,6 +151,12 @@ export interface HybldConfig {
     workers?: number;
     /** Per-page render timeout in milliseconds (a hung render fails the page instead of stalling the build). Default 60000. */
     timeout?: number;
+    /**
+     * Delegated backends (Next.js, Astro) only: split a large scope into
+     * framework builds of at most this many pages, checkpointing the manifest
+     * between them. Default: the whole scope in one framework build.
+     */
+    batchSize?: number;
   };
   cms?: {
     concurrency?: number;
@@ -177,6 +183,19 @@ export interface HybldConfig {
     origins: string[];
     /** Output subdirectory for downloaded media. Default "media". */
     dir?: string;
+    /**
+     * Resize and re-encode downloaded raster images (PNG, JPEG, WebP, AVIF).
+     * Needs the optional `sharp` package installed in the project. SVG, GIF
+     * and ICO files are copied untouched.
+     */
+    optimize?: {
+      /** Cap the width in pixels; smaller images are never enlarged. Default 1600. */
+      maxWidth?: number;
+      /** Output format. "original" keeps each image's own format. Default "webp". */
+      format?: "webp" | "avif" | "original";
+      /** Encoder quality, 1 to 100. Default 80. */
+      quality?: number;
+    };
   };
   /** Draft preview builds (hybld preview). */
   preview?: {
@@ -203,7 +222,7 @@ export interface ResolvedConfig {
   outDir: string;
   basePath: string;
   manifest: string;
-  render: { entry: string; template: string; workers: number; timeout: number };
+  render: { entry: string; template: string; workers: number; timeout: number; batchSize?: number };
   cms: { concurrency: number; perPage: number; requestsPerSecond?: number; cache: false | { ttlSeconds: number } };
   pages: HybldConfig["pages"];
   sitemap: { enabled: boolean; baseUrl?: string };
@@ -217,7 +236,11 @@ export interface ResolvedConfig {
   };
   redirects: { file: string };
   emitData: boolean;
-  images: { origins: string[]; dir: string } | null;
+  images: {
+    origins: string[];
+    dir: string;
+    optimize: { maxWidth: number; format: "webp" | "avif" | "original"; quality: number } | null;
+  } | null;
   preview: { pathPrefix: string };
 }
 
@@ -239,6 +262,8 @@ export interface BuildOptions {
   noDependents?: boolean;
   failFast?: boolean;
   concurrency?: number;
+  /** Delegated backends: pages per framework build for this run (overrides render.batchSize). */
+  batchSize?: number;
 }
 
 export interface PageFailure {

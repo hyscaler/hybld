@@ -32,6 +32,7 @@ Shared flags:
 | `--no-dependents` | Do not rebuild listing pages affected by the scope. |
 | `--fail-fast` | Abort on the first page failure (default: record and continue; exit code 2). |
 | `--concurrency <n>` | Engine-side evaluation/render concurrency. |
+| `--batch-size <n>` | Next.js and Astro: pages per framework build for this run (overrides `render.batchSize`). |
 | `--wait` | Wait for the build lock instead of failing when another build is running. |
 | `--json` | Machine-readable summary on stdout. |
 | `--verbose` | Progress logging to stderr. |

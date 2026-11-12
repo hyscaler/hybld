@@ -1,6 +1,6 @@
 {
   "name": "@hybld/adapter-contentful",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Contentful Delivery API adapter preset for hybld",
   "author": "HyScaler",
   "license": "MIT",

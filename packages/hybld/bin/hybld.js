@@ -10,4 +10,13 @@ if (major < 22 || (major === 22 && minor < 5)) {
   );
   process.exit(1);
 }
+// node:sqlite is stable enough to build on but still prints an
+// ExperimentalWarning on every run; drop that one warning so CI logs stay
+// readable. Every other warning passes through untouched.
+const emitWarning = process.emitWarning;
+process.emitWarning = function (warning, ...args) {
+  const message = typeof warning === "string" ? warning : warning?.message;
+  if (typeof message === "string" && message.includes("SQLite is an experimental feature")) return;
+  return emitWarning.call(process, warning, ...args);
+};
 await import("../dist/cli.js");

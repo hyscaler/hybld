@@ -2,6 +2,22 @@
 
 All notable changes to the hybld packages are documented here. All packages version together (linked via Changesets); per-package changelogs are generated from 1.0.0 onward.
 
+## 1.1.0 (2026-11-12)
+
+Includes the 1.0.1 pacing fix below, which was never published on its own.
+
+- Batched framework builds for Next.js and Astro: `render.batchSize` (or
+  `--batch-size <n>`) splits a large scope into several framework builds
+  in one command. Every batch carries all page types, assets merge after
+  each batch, and the manifest is checkpointed between batches, so a
+  crash late in a long first build resumes instead of starting over.
+- Image optimization: `images.optimize` caps the width of downloaded
+  raster images and re-encodes them (WebP by default) through the
+  optional `sharp` package.
+- The CLI no longer prints Node's SQLite ExperimentalWarning on every run.
+- The changed-files report lists each file once when it was written by
+  more than one batch.
+
 ## 1.0.1 (2026-09-16)
 
 - http: the requestsPerSecond throttle now paces concurrent requests

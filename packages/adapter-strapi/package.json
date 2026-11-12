@@ -1,6 +1,6 @@
 {
   "name": "@hybld/adapter-strapi",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Strapi (v4/v5) REST adapter preset for hybld",
   "author": "HyScaler",
   "license": "MIT",

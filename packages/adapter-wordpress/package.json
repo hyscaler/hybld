@@ -1,6 +1,6 @@
 {
   "name": "@hybld/adapter-wordpress",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "WordPress REST adapter preset for hybld",
   "author": "HyScaler",
   "license": "MIT",

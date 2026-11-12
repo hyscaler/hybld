@@ -172,7 +172,7 @@ Modifiers: `--force` (bypass hash skipping), `--dry-run` (list what would build)
 - **RSS feed** (`feed.xml`) from per-article entries captured at build time.
 - **Redirects map** from slug changes (`.hybld/redirects.json`, chain-collapsed); `hybld sync --redirects netlify|nginx` emits host formats.
 - **Changed-files report** (`.hybld/last-build.json`): exactly which files were created, updated, deleted, so deploys ship only the diff.
-- **Image localization** (opt-in `images: { origins: [...] }`): CMS-hosted images referenced by pages are downloaded into the output and URLs rewritten, so the static site does not hotlink the CMS.
+- **Image localization** (opt-in `images: { origins: [...] }`): CMS-hosted images referenced by pages are downloaded into the output and URLs rewritten, so the static site does not hotlink the CMS. Add `optimize: { maxWidth, format, quality }` to resize and re-encode them (needs the optional `sharp` package).
 
 ## Running in production
 
@@ -260,7 +260,7 @@ Or implement the interface directly (`count`, `listArticles`, `getArticle`, opti
 | `cms.concurrency` / `cms.perPage` / `cms.requestsPerSecond` | 4 / 100 / off | CMS request budget. |
 | `cms.cache` | off | Cross-run disk cache for bulk rebuild campaigns (modified-since queries always bypass it). |
 | `sitemap` / `feed` / `redirects` | see above | Maintained artifacts. |
-| `images` | off | CMS image localization: `{ origins: [...], dir: "media" }`. |
+| `images` | off | CMS image localization: `{ origins: [...], dir: "media", optimize?: { maxWidth, format, quality } }`. |
 | `emitData` | false | Write `data.json` next to every page (client-side navigation without CMS calls). |
 | `basePath`, `root`, `preview.pathPrefix` | `/`, config dir, `/_preview` | Occasional needs. |
 

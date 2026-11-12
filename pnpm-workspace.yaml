@@ -5,6 +5,10 @@ allowBuilds:
   esbuild: true
   sharp: true
 minimumReleaseAgeExclude:
+  - '@hybld/adapter-wordpress@1.1.0'
+  - '@hybld/astro@1.1.0'
+  - '@hybld/next@1.1.0'
+  - hybld@1.1.0
   - '@hybld/adapter-wordpress@1.0.1'
   - '@hybld/astro@1.0.1'
   - '@hybld/next@1.0.1'

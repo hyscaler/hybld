@@ -18,7 +18,7 @@ function parseArgs(argv: string[]): ParsedArgs {
   const positionals: string[] = [];
   const flags: Record<string, string | boolean> = {};
   const valueFlags = new Set([
-    "limit", "chunk", "chunk-size", "routes", "slugs", "ids", "since", "config", "concurrency", "o",
+    "limit", "chunk", "chunk-size", "routes", "slugs", "ids", "since", "config", "concurrency", "batch-size", "o",
     "port", "host", "secret", "redirects", "url",
   ]);
   for (let i = 0; i < rest.length; i++) {
@@ -77,6 +77,7 @@ function toBuildOptions(flags: Record<string, string | boolean>): BuildOptions {
   if (flags["no-dependents"]) opts.noDependents = true;
   if (flags["fail-fast"]) opts.failFast = true;
   if (flags.concurrency !== undefined) opts.concurrency = numericFlag("concurrency", flags.concurrency, { min: 1 });
+  if (flags["batch-size"] !== undefined) opts.batchSize = numericFlag("batch-size", flags["batch-size"], { min: 1 });
 
   const selectors = [
     opts.all, opts.limit !== undefined, opts.chunk, opts.routes?.length || opts.slugs?.length || opts.ids?.length,
@@ -323,6 +324,7 @@ usage:
 
 shared flags: --config <path> --concurrency <n> --dry-run --force
               --no-dependents --fail-fast --wait --json --verbose
+              --batch-size <n>  (Next.js/Astro: pages per framework build)
               --version`);
   return command === "help" ? 0 : 1;
 }

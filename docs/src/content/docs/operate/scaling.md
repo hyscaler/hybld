@@ -53,6 +53,14 @@ jobs:
 
 Sizing chunks: aim for jobs of 30 to 90 minutes. A 1M-page catalog at ~200 pages/s per job (CMS-bound, conservative) is ~85 minutes across 10 jobs. On delegated backends (Next/Astro), remember each chunk run also pays one framework build; the chunk count matters less than keeping each framework build's page count in the tens of thousands.
 
+**Next.js and Astro: batch the framework build.** By default the whole scope goes through one `next build` or `astro build`, which gets slow and memory-hungry far before 100k pages. Set a batch size and hybld runs several smaller framework builds in one command, merging each as it finishes:
+
+```bash
+hybld build --all --batch-size 5000
+```
+
+The manifest is checkpointed after every batch. If the machine dies in batch 14 of 20, rerun the same command: the first 13 batches are skipped and the build resumes from there. Each batch pays the framework's fixed startup cost, so prefer a few thousand pages per batch over a few hundred. Batching and chunking combine: chunk across CI jobs for wall-clock time, batch within each job to keep every framework build small. On the Pages Router, pages built in early batches carry older build ids than `keepBuildIds` retains, so client-side navigation to them falls back to a full page load until they are next rebuilt.
+
 **Disk math.** Page HTML dominates: 1M pages at 30 to 100 KB each is 30 to 100 GB in `outDir`, plus the manifest (~1 row per page; a 1M-row manifest is a few hundred MB) and sitemap shards (20 files at 50k URLs each). Provision the build host accordingly; the output can live on cheap storage since deploys ship diffs.
 
 ## Phase 2: manifest strategy
